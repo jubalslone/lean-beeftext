@@ -47,6 +47,7 @@ signals:
     void backupWasRestored() const; ///< Signal emitted when a backup has been restored
 
 private: // member functions
+    void playCompletionSoundIfEnabled(QString const &trigger); ///< Play or record the completion-sound decision.
     ComboManager(); ///< Default constructor
     void checkAndPerformSubstitution(); ///< Check if a combo or emoji substitution is possible and if so performs it
     bool checkAndPerformComboSubstitution(); ///< check if a combo substitution is possible and if so performs it

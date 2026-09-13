@@ -179,6 +179,27 @@ void ComboManager::playSound() const {
 
 
 //****************************************************************************************************************************************************
+/// Play the intentional completion WAV only when the saved preference permits it, and
+/// record a content-free diagnostic decision for investigating unintended system sounds.
+///
+/// \param[in] trigger The non-content trigger category used for diagnostics.
+//****************************************************************************************************************************************************
+void ComboManager::playCompletionSoundIfEnabled(QString const &trigger) {
+    bool const enabled = PreferencesManager::instance().playSoundOnCombo();
+    bool const loaded = static_cast<bool>(sound_);
+    if ((!enabled) || (!loaded)) {
+        globals::debugLog().addInfo(QString("Completion audio diagnostic: trigger=%1, preference=%2, waveLoaded=%3, PlaySoundW=not-called.")
+                                        .arg(trigger, enabled ? "on" : "off", loaded ? "yes" : "no"));
+        return;
+    }
+
+    bool const played = sound_->play();
+    globals::debugLog().addInfo(QString("Completion audio diagnostic: trigger=%1, preference=on, waveLoaded=yes, PlaySoundW=%2.")
+                                    .arg(trigger, played ? "succeeded" : "failed"));
+}
+
+
+//****************************************************************************************************************************************************
 //
 //****************************************************************************************************************************************************
 void ComboManager::checkAndPerformSubstitution() {
@@ -215,9 +236,9 @@ bool ComboManager::checkAndPerformComboSubstitution() {
     }
 
     SpCombo const combo = result[result.size() > 1 ? static_cast<quint32>(rng_.get()) % result.size() : 0];
-    if ((!isBeeftextTheForegroundApplication()) &&
-        (combo->performSubstitution(false) && PreferencesManager::instance().playSoundOnCombo()) && sound_)
-        sound_->play(); // in Beeftext windows, substitution is disabled
+    if ((!isBeeftextTheForegroundApplication()) && combo->performSubstitution(false)) {
+        this->playCompletionSoundIfEnabled(prefs.useAutomaticSubstitution() ? "automatic-combo" : "manual-combo");
+    } // in Beeftext windows, substitution is disabled
     this->onComboBreakerTyped();
     return true;
 }
@@ -260,8 +281,7 @@ bool ComboManager::checkAndPerformEmojiSubstitution() {
             return true;
         }
         emoji->setlastUseDateTime(QDateTime::currentDateTime());
-        if (PreferencesManager::instance().playSoundOnCombo() && sound_)
-            sound_->play();
+        this->playCompletionSoundIfEnabled("automatic-emoji");
         result = true;
     }
     this->onComboBreakerTyped();
