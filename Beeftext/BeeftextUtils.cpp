@@ -452,18 +452,8 @@ void performRestrictedTextInput(qint32 eraseCount, QString const &text, qint32 c
     UINT const eventCount = static_cast<UINT>(events.size());
     SetLastError(ERROR_SUCCESS);
     UINT const sent = SendInput(eventCount, events.data(), sizeof(INPUT));
-    if (sent == eventCount) {
-        globals::debugLog().addInfo(
-            QString("Restricted input diagnostic: target=%1, erase=%2, textUtf16=%3, lineBreaks=%4, cursorLeft=%5, plannedEvents=%6, sentEvents=%7.")
-                .arg(getActiveExecutableFileName())
-                .arg(safeEraseCount)
-                .arg(safeText.size())
-                .arg(safeText.count(QChar::LineFeed))
-                .arg(safeCursorLeftCount)
-                .arg(eventCount)
-                .arg(sent));
+    if (sent == eventCount)
         return;
-    }
 
     DWORD const error = GetLastError();
     if ((sent > 0) && ((sent % 2) != 0)) {
@@ -473,16 +463,6 @@ void performRestrictedTextInput(qint32 eraseCount, QString const &text, qint32 c
         release.ki.dwFlags |= KEYEVENTF_KEYUP;
         SendInput(1, &release, sizeof(INPUT));
     }
-    globals::debugLog().addWarning(
-        QString("Restricted input diagnostic: target=%1, erase=%2, textUtf16=%3, lineBreaks=%4, cursorLeft=%5, plannedEvents=%6, sentEvents=%7, WindowsError=%8.")
-            .arg(getActiveExecutableFileName())
-            .arg(safeEraseCount)
-            .arg(safeText.size())
-            .arg(safeText.count(QChar::LineFeed))
-            .arg(safeCursorLeftCount)
-            .arg(eventCount)
-            .arg(sent)
-            .arg(error));
     throw Exception(QString("Could not insert restricted snippet: sent %1 of %2 events (Windows error %3; elevated targets may block input).")
                         .arg(sent).arg(eventCount).arg(error));
 }

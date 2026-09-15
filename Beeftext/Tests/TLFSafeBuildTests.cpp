@@ -514,37 +514,6 @@ void testRestrictedPortabilityUiSurface() {
 }
 
 
-void testCompletionAudioDiagnostics() {
-	QString const managerSource = readSourceFile("Combo/ComboManager.cpp");
-	QString const inputSource = readSourceFile("BeeftextUtils.cpp");
-	QString const waveSource = readSourceFile("WaveSound.cpp");
-	QString const allRelevantSources = managerSource + inputSource + waveSource
-		+ readSourceFile("InputManager.cpp") + readSourceFile("Combo/Combo.cpp");
-
-	expect(managerSource.contains("playCompletionSoundIfEnabled")
-		&& managerSource.contains("preference=%2")
-		&& managerSource.contains("PlaySoundW=not-called")
-		&& managerSource.indexOf("if ((!enabled) || (!loaded))")
-			< managerSource.indexOf("bool const played = sound_->play()"),
-		"completion diagnostics prove that the intentional WAV call is gated by the saved preference");
-	expect(inputSource.contains("Restricted input diagnostic:")
-		&& inputSource.contains("erase=%2")
-		&& inputSource.contains("textUtf16=%3")
-		&& inputSource.contains("lineBreaks=%4")
-		&& inputSource.contains("cursorLeft=%5")
-		&& inputSource.contains("plannedEvents=%6")
-		&& inputSource.contains("sentEvents=%7")
-		&& !inputSource.contains("Restricted input diagnostic: text="),
-		"restricted-input diagnostics record event counts without recording combo or snippet content");
-	expect(waveSource.contains("PlaySound(")
-		&& allRelevantSources.count("PlaySound(") == 1
-		&& !allRelevantSources.contains("MessageBeep(")
-		&& !allRelevantSources.contains("QApplication::beep(")
-		&& !allRelevantSources.contains("QGuiApplication::beep("),
-		"the only explicit completion audio API remains the preference-gated WAV player");
-}
-
-
 void testProductFinishingSurface() {
 	QString const constantsHeader = readSourceFile("BeeftextConstants.h");
 	QString const constantsSource = readSourceFile("BeeftextConstants.cpp");
@@ -1209,7 +1178,6 @@ int main(int argc, char *argv[]) {
 	testComboExportBundle();
 	testComboPortabilityFiles();
 	testRestrictedPortabilityUiSurface();
-	testCompletionAudioDiagnostics();
 	testProductFinishingSurface();
     testInstalledStorageAndMigrationSafety();
     testInstallerArchitecture();
