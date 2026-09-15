@@ -1093,10 +1093,12 @@ void testInstallerArchitecture() {
         && workflow.contains("-Mode Installed")
         && workflow.contains("-Mode Portable")
 		&& workflow.contains("$checksumFullPath = [IO.Path]::GetFullPath($checksumPath)")
-        && workflow.contains("Same-version reinstall")
-        && workflow.contains("Documents user-data fixture was deleted by uninstall")
-		&& workflow.contains("Lean-Beeftext-Setup-1.0.1.exe"),
-        "Windows CI pins and verifies Inno, stages both modes, and smoke-tests reinstall and preserving user data");
+		&& workflow.contains("Same-version reinstall")
+		&& workflow.contains("Documents user-data fixture was deleted by uninstall")
+		&& workflow.contains("Lean-Beeftext-Setup-1.0.1.exe")
+		&& workflow.contains("Product: Lean Beeftext 1\\.0\\.1")
+		&& !workflow.contains("Product: Lean Beeftext 1\\.0\\.0"),
+		"Windows CI pins and verifies Inno, stages both modes, and smoke-tests reinstall and preserving user data");
     expect(installerDoc.contains("does not delete `<Documents>\\Lean Beeftext`")
         && readRepositoryFile("README.md").contains("Program Files\\Lean Beeftext")
         && readRepositoryFile("README.md").contains("OneDrive Known Folder Move"),
@@ -1116,6 +1118,8 @@ void testProductionSigningArchitecture() {
 	expect(production.contains("workflow_dispatch:")
 		&& !production.contains("pull_request:")
 		&& !production.contains("\n  push:")
+		&& production.contains("Product: Lean Beeftext 1\\.0\\.1")
+		&& !production.contains("Product: Lean Beeftext 1\\.0\\.0")
 		&& !production.contains("\n  release:")
 		&& production.contains("source_commit:")
 		&& production.contains("^[0-9a-f]{40}$")
