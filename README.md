@@ -196,6 +196,6 @@ cmake --build build --config Release --parallel
 ctest --test-dir build -C Release --output-on-failure
 ```
 
-The GitHub Actions Windows workflow performs the same configure, Release build, complete test run, clean-source checks, shared installed/portable staging, provenance recording, and packaged-file checksum generation. It compiles the installer, checks the installed payload cannot activate portable mode, and exercises silent install, same-version reinstall, and data-preserving uninstall. It produces both a portable QA artifact and `Lean-Beeftext-Setup-1.0.0.exe` from the exact same source commit.
+The GitHub Actions Windows workflow performs the same configure, Release build, complete test run, clean-source checks, shared installed/portable staging, provenance recording, and packaged-file checksum generation. It compiles the installer, checks the installed payload cannot activate portable mode, and exercises silent install, same-version reinstall, and data-preserving uninstall. It produces both a portable QA artifact and `Lean-Beeftext-Setup-1.0.1.exe` from the exact same source commit.
 
 Project links: [repository](https://github.com/jubalslone/lean-beeftext), [issues](https://github.com/jubalslone/lean-beeftext/issues), and [releases](https://github.com/jubalslone/lean-beeftext/releases).

@@ -110,7 +110,7 @@ else {
 
 $qtVersion = (& qmake -query QT_VERSION).Trim()
 @(
-	'Product: Lean Beeftext 1.0.0'
+	'Product: Lean Beeftext 1.0.1'
 	"Distribution: $Mode"
 	"Repository: $Repository"
 	"Source commit: $SourceCommit"

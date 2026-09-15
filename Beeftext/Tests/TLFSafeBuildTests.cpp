@@ -462,6 +462,60 @@ QString readRepositoryFile(QString const &relativePath) {
 }
 
 
+void testCompletionSoundPreferencePersistence() {
+	QTemporaryDir temporaryDirectory;
+	expect(temporaryDirectory.isValid(), "temporary completion-sound preference directory is available");
+	if (!temporaryDirectory.isValid())
+		return;
+
+	QStringList const settingsPaths = {
+		QDir(temporaryDirectory.path()).absoluteFilePath("Documents/Lean Beeftext/Settings.ini"),
+		QDir(temporaryDirectory.path()).absoluteFilePath("Portable/Data/Settings.ini"),
+	};
+	for (QString const &settingsPath: settingsPaths) {
+		expect(QDir().mkpath(QFileInfo(settingsPath).absolutePath()),
+			QString("completion-sound preference directory is created: %1").arg(settingsPath));
+
+		{
+			QSettings settings(settingsPath, QSettings::IniFormat);
+			expect(!tlf::readPlaySoundOnCombo(settings),
+				QString("missing completion-sound preference defaults off: %1").arg(settingsPath));
+			tlf::writePlaySoundOnCombo(settings, true);
+			settings.sync();
+			expect(settings.status() == QSettings::NoError,
+				QString("explicit enabled completion-sound preference is saved: %1").arg(settingsPath));
+		}
+		{
+			QSettings settings(settingsPath, QSettings::IniFormat);
+			expect(tlf::readPlaySoundOnCombo(settings),
+				QString("explicit enabled completion-sound preference survives reload: %1").arg(settingsPath));
+			tlf::writePlaySoundOnCombo(settings, false);
+			settings.sync();
+		}
+		{
+			QSettings settings(settingsPath, QSettings::IniFormat);
+			expect(!tlf::readPlaySoundOnCombo(settings),
+				QString("explicit disabled completion-sound preference survives reload: %1").arg(settingsPath));
+			tlf::writePlaySoundOnCombo(settings, true);
+			tlf::writePlaySoundOnCombo(settings, tlf::kDefaultPlaySoundOnCombo);
+			settings.sync();
+		}
+		{
+			QSettings settings(settingsPath, QSettings::IniFormat);
+			expect(!tlf::readPlaySoundOnCombo(settings),
+				QString("reset completion-sound preference defaults off: %1").arg(settingsPath));
+		}
+	}
+
+	QString const preferencesSource = readSourceFile("Preferences/PreferencesManager.cpp");
+	expect(preferencesSource.contains("setPlaySoundOnCombo(tlf::kDefaultPlaySoundOnCombo)")
+		&& preferencesSource.contains("tlf::writePlaySoundOnCombo(*settings_, value)")
+		&& preferencesSource.contains("return tlf::readPlaySoundOnCombo(*settings_)")
+		&& !preferencesSource.contains("kDefaultPlaySoundOnCombo = true"),
+		"PreferencesManager uses the tested default-off helper for reset, persistence, and reload");
+}
+
+
 void testRestrictedPortabilityUiSurface() {
 	QString const mainWindowUi = readSourceFile("MainWindow.ui");
 	expect(!mainWindowUi.contains("actionBackup") && !mainWindowUi.contains("actionRestore")
@@ -518,9 +572,9 @@ void testProductFinishingSurface() {
 	QString const constantsHeader = readSourceFile("BeeftextConstants.h");
 	QString const constantsSource = readSourceFile("BeeftextConstants.cpp");
 	expect(constantsSource.contains("kApplicationName = \"Lean Beeftext\"")
-		&& constantsSource.contains("kProductVersion = \"1.0.0\"")
+		&& constantsSource.contains("kProductVersion = \"1.0.1\"")
 		&& constantsSource.contains("kUpstreamVersion = \"16.0\""),
-		"public product identity is Lean Beeftext 1.0.0 based on Beeftext 16.0");
+		"public product identity is Lean Beeftext 1.0.1 based on Beeftext 16.0");
 	QRegularExpression const singleInstancePattern(
 		R"regex(kSingleInstanceIdentifier\s*=\s*"([^"]+)")regex");
 	QRegularExpressionMatch const singleInstanceMatch = singleInstancePattern.match(constantsSource);
@@ -532,10 +586,11 @@ void testProductFinishingSurface() {
 		"Lean uses a named, stable, version-free single-instance identity");
 	expect(constantsSource.contains("kVersionNumber(16, 0)")
 		&& !readSourceFile("Dialogs/AboutDialog.cpp").contains("kVersionNumber")
-		&& readRepositoryFile("CMakeLists.txt").contains("VERSION 1.0.0")
-		&& readSourceFile("CMakeLists.txt").contains("VERSION 1.0.0")
-		&& readSourceFile("Beeftext.rc").contains("VERSION_STRING \"1.0.0\\0\""),
-		"public metadata is 1.0.0 while the disabled updater keeps its two-part upstream compatibility value");
+		&& readRepositoryFile("CMakeLists.txt").contains("VERSION 1.0.1")
+		&& readSourceFile("CMakeLists.txt").contains("VERSION 1.0.1")
+		&& readSourceFile("Beeftext.rc").contains("VERSION_NUMBER 1,0,1,0")
+		&& readSourceFile("Beeftext.rc").contains("VERSION_STRING \"1.0.1\\0\""),
+		"public metadata is 1.0.1 while the disabled updater keeps its two-part upstream compatibility value");
     expect(constantsSource.contains("kSettingsApplicationName = \"Lean Beeftext\"")
         && constantsSource.contains("kOrganizationName = \"Jubal Slone\"")
         && constantsHeader.contains("kSettingsApplicationName")
@@ -972,6 +1027,8 @@ void testInstallerArchitecture() {
     QString const installerDoc = readRepositoryFile("INSTALLER.md");
     expect(installer.contains("AppId={{499E5EE9-ECC6-455E-B78A-EDF581715A80}")
         && !installer.contains("AppId={{499E5EE9-ECC6-455E-B78A-EDF581715A80}-1.0")
+		&& installer.contains("#define MyAppVersion \"1.0.1\"")
+		&& installer.contains("OutputBaseFilename=Lean-Beeftext-Setup-1.0.1")
         && installerDoc.contains("{499E5EE9-ECC6-455E-B78A-EDF581715A80}"),
         "the Inno AppId is explicit, stable, documented, and version-free");
     expect(installer.contains("DefaultDirName={autopf}\\Lean Beeftext")
@@ -1014,6 +1071,7 @@ void testInstallerArchitecture() {
 			&& staging.contains("MSVC runtime DLLs already staged by windeployqt")
 			&& staging.contains("MSVC runtime DLLs added by explicit copy")
 			&& staging.contains("$checksumFullPath = [IO.Path]::GetFullPath($checksumPath)")
+			&& staging.contains("Product: Lean Beeftext 1.0.1")
         && staging.contains("SHA256SUMS.txt")
         && staging.contains("BUILD_INFO.txt"),
 		"one staging script builds isolated installed and portable payloads with provenance manifests");
@@ -1035,10 +1093,12 @@ void testInstallerArchitecture() {
         && workflow.contains("-Mode Installed")
         && workflow.contains("-Mode Portable")
 		&& workflow.contains("$checksumFullPath = [IO.Path]::GetFullPath($checksumPath)")
-        && workflow.contains("Same-version reinstall")
-        && workflow.contains("Documents user-data fixture was deleted by uninstall")
-        && workflow.contains("Lean-Beeftext-Setup-1.0.0.exe"),
-        "Windows CI pins and verifies Inno, stages both modes, and smoke-tests reinstall and preserving user data");
+		&& workflow.contains("Same-version reinstall")
+		&& workflow.contains("Documents user-data fixture was deleted by uninstall")
+		&& workflow.contains("Lean-Beeftext-Setup-1.0.1.exe")
+		&& workflow.contains("Product: Lean Beeftext 1\\.0\\.1")
+		&& !workflow.contains("Product: Lean Beeftext 1\\.0\\.0"),
+		"Windows CI pins and verifies Inno, stages both modes, and smoke-tests reinstall and preserving user data");
     expect(installerDoc.contains("does not delete `<Documents>\\Lean Beeftext`")
         && readRepositoryFile("README.md").contains("Program Files\\Lean Beeftext")
         && readRepositoryFile("README.md").contains("OneDrive Known Folder Move"),
@@ -1058,6 +1118,8 @@ void testProductionSigningArchitecture() {
 	expect(production.contains("workflow_dispatch:")
 		&& !production.contains("pull_request:")
 		&& !production.contains("\n  push:")
+		&& production.contains("Product: Lean Beeftext 1\\.0\\.1")
+		&& !production.contains("Product: Lean Beeftext 1\\.0\\.0")
 		&& !production.contains("\n  release:")
 		&& production.contains("source_commit:")
 		&& production.contains("^[0-9a-f]{40}$")
@@ -1152,11 +1214,11 @@ void testProductionSigningArchitecture() {
 		&& production.contains("signer subject does not match the signed app identity")
 		&& production.contains("DISTRIBUTION_SHA256SUMS.txt")
 		&& production.contains("PRODUCTION_SIGNING_REPORT.txt")
-		&& production.contains("Lean-Beeftext-1.0.0-signed-portable-windows-x64")
-		&& production.contains("Lean-Beeftext-1.0.0-signed-installer"),
+		&& production.contains("Lean-Beeftext-1.0.1-signed-portable-windows-x64")
+		&& production.contains("Lean-Beeftext-1.0.1-signed-installer"),
 		"the signed candidate fails closed on missing identity/timestamps and publishes only private QA artifacts with final hashes and provenance");
 	expect(signingDoc.contains("generated uninstaller")
-		&& signingDoc.contains("final `Lean-Beeftext-Setup-1.0.0.exe` installer")
+		&& signingDoc.contains("final `Lean-Beeftext-Setup-1.0.1.exe` installer")
 		&& signingDoc.contains("GitHub's short-lived OIDC identity")
 		&& signingDoc.contains("does not re-sign Qt")
 		&& signingDoc.contains("does not guarantee that Microsoft Defender SmartScreen will never warn"),
@@ -1175,6 +1237,7 @@ int main(int argc, char *argv[]) {
     testBlockedControlsInBothModes();
     testCursorPlan();
     testMultilinePreferencePersistence();
+	testCompletionSoundPreferencePersistence();
 	testComboExportBundle();
 	testComboPortabilityFiles();
 	testRestrictedPortabilityUiSurface();

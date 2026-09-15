@@ -62,7 +62,6 @@ QString const kKeyGeometry = "Geometry"; ///< The settings key for storing the g
 QString const kKeyLastComboImportExportPath = "LastComboImportExportPath"; ///< The setting key for 'Last combo import/export path' preference
 QString const kKeyLastUpdateCheckDateTime = "LastUpdateCheck"; ///< The setting key for the last update check date/time
 QString const kKeyLocale = "Locale"; ///< The settings key for the locale
-QString const kKeyPlaySoundOnCombo = "PlaySoundOnCombo"; ///< The settings key for the 'Play sound on combo' preference
 QString const kKeySplitterState = "MainWindowSplitterState"; ///< The setting key for storing the main window splitter state.
 QString const kKeyUseAutomaticSubstitution = "UseAutomaticSubstitution"; ///< The setting key for the 'Use automatic substitution' preference
 QString const kKeyUseCustomBackupLocation = "UseCustomBackupLocation"; ///< The settings key for the 'Use custom backup location' preference.
@@ -104,7 +103,6 @@ QString const kDefaultLastComboImportExportPath = QDir(QStandardPaths::writableL
     QStandardPaths::DesktopLocation)).absoluteFilePath("Combos.json");///< The default value for the 'Last combo import/export path' preference
 qint32 constexpr kMinValueDelayBetweenKeystrokesMs = 0; ///< The default valur for the 'Delay between keystrokes' preference.
 qint32 constexpr kMaxValueDelayBetweenKeystrokesMs = 500; ///< The default valur for the 'Delay between keystrokes' preference.
-bool constexpr kDefaultPlaySoundOnCombo = true; ///< The default value for the 'Play sound on combo' preference
 bool constexpr kDefaultUseAutomaticSubstitution = true; ///< The default value for the 'Use automatic substitution' preference
 bool constexpr kDefaultUseCustomBackupLocation = false; ///< The default value for the 'Use custom backup location' preference.
 bool constexpr kDefaultUseCustomSound = false; ///< The default value for the 'Use custom sound' preference.
@@ -365,7 +363,7 @@ void PreferencesManager::reset() {
     this->setEmojiShortcodeEnabled(kDefaultEmojiShortcodesEnabled);
     this->setEnableAppEnableDisableShortcut(kDefaultEnableAppEnableDisableShortcut);
     this->setLocale(I18nManager::instance().validateLocale(QLocale::system()));
-    this->setPlaySoundOnCombo(kDefaultPlaySoundOnCombo);
+	this->setPlaySoundOnCombo(tlf::kDefaultPlaySoundOnCombo);
     this->setUseAutomaticSubstitution(kDefaultUseAutomaticSubstitution);
     this->setAllowRealLineBreaksInSnippets(tlf::kDefaultAllowRealLineBreaksInSnippets);
     this->setComboTriggersOnSpace(kDefaultComboTriggersOnSpace);
@@ -531,7 +529,7 @@ bool PreferencesManager::autoStartAtLogin() const {
 /// \param[in] value The value for the preference
 //****************************************************************************************************************************************************
 void PreferencesManager::setPlaySoundOnCombo(bool value) const {
-    settings_->setValue(kKeyPlaySoundOnCombo, value);
+	tlf::writePlaySoundOnCombo(*settings_, value);
 }
 
 
@@ -539,7 +537,7 @@ void PreferencesManager::setPlaySoundOnCombo(bool value) const {
 /// \return The value for the preference
 //****************************************************************************************************************************************************
 bool PreferencesManager::playSoundOnCombo() const {
-    return this->readSettings<bool>(kKeyPlaySoundOnCombo, kDefaultPlaySoundOnCombo);
+	return tlf::readPlaySoundOnCombo(*settings_);
 }
 
 

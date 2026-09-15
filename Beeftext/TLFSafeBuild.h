@@ -17,6 +17,8 @@ namespace tlf {
 
 inline constexpr char kAllowRealLineBreaksInSnippetsSettingKey[] = "AllowRealLineBreaksInSnippets";
 inline constexpr bool kDefaultAllowRealLineBreaksInSnippets = false;
+inline constexpr char kPlaySoundOnComboSettingKey[] = "PlaySoundOnCombo";
+inline constexpr bool kDefaultPlaySoundOnCombo = false;
 
 
 enum class ERestrictedVariable {
@@ -46,6 +48,8 @@ QString sanitizeText(QString const &text, bool allowRealLineBreaks = false);
 RestrictedSnippet prepareSnippet(QString const &text, bool allowRealLineBreaks = false);
 bool readAllowRealLineBreaksInSnippets(QSettings const &settings);
 void writeAllowRealLineBreaksInSnippets(QSettings &settings, bool value);
+bool readPlaySoundOnCombo(QSettings const &settings);
+void writePlaySoundOnCombo(QSettings &settings, bool value);
 
 
 } // namespace tlf
