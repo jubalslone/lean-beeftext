@@ -8,7 +8,7 @@ The production workflow signs only Lean-owned executable files:
 
 - the one built `LeanBeeftext.exe`, reused byte-for-byte by installed and portable packages;
 - Inno Setup's generated uninstaller; and
-- the final `Lean-Beeftext-Setup-1.0.0.exe` installer.
+- the final `Lean-Beeftext-Setup-1.0.1.exe` installer.
 
 Lean Beeftext does not re-sign Qt, Microsoft runtime, OpenSSL, or other third-party DLLs. Their existing vendor signatures, if any, are left unchanged.
 

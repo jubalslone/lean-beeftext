@@ -255,7 +255,7 @@ jobs:
           }
 
           Compress-Archive -Path ./artifact/Lean-Beeftext-Portable/* `
-            -DestinationPath ./artifact/Lean-Beeftext-1.0.0-portable-windows-x64.zip -CompressionLevel Optimal -Force
+            -DestinationPath ./artifact/Lean-Beeftext-1.0.1-portable-windows-x64.zip -CompressionLevel Optimal -Force
 
       - name: Re-verify final signed payload manifests
         shell: pwsh
@@ -353,7 +353,7 @@ jobs:
             "--signtool=leanartifact=$signToolCommand" `
             ./Installer/LeanBeeftext.iss 2>&1 | Tee-Object -FilePath installer-build-output.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          if (-not (Test-Path ./Installer/_output/Lean-Beeftext-Setup-1.0.0.exe)) {
+          if (-not (Test-Path ./Installer/_output/Lean-Beeftext-Setup-1.0.1.exe)) {
             throw 'Inno did not produce the expected signed installer.'
           }
 
@@ -373,7 +373,7 @@ jobs:
           }
           $app = (Resolve-Path ./Installer/_staging/installed/LeanBeeftext.exe).Path
           $portableApp = (Resolve-Path ./artifact/Lean-Beeftext-Portable/LeanBeeftext.exe).Path
-          $installer = (Resolve-Path ./Installer/_output/Lean-Beeftext-Setup-1.0.0.exe).Path
+          $installer = (Resolve-Path ./Installer/_output/Lean-Beeftext-Setup-1.0.1.exe).Path
           $appSignature = Assert-Signature $app
           $null = Assert-Signature $portableApp $appSignature.SignerCertificate.Subject
           $installerSignature = Assert-Signature $installer $appSignature.SignerCertificate.Subject
@@ -385,7 +385,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $setup = (Resolve-Path ./Installer/_output/Lean-Beeftext-Setup-1.0.0.exe).Path
+          $setup = (Resolve-Path ./Installer/_output/Lean-Beeftext-Setup-1.0.1.exe).Path
           $stagedApp = (Resolve-Path ./Installer/_staging/installed/LeanBeeftext.exe).Path
           $expectedAppHash = (Get-FileHash -LiteralPath $stagedApp -Algorithm SHA256).Hash
           $expectedSubject = (Get-AuthenticodeSignature -LiteralPath $stagedApp).SignerCertificate.Subject
@@ -469,9 +469,9 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $portableZip = (Resolve-Path ./artifact/Lean-Beeftext-1.0.0-portable-windows-x64.zip).Path
+          $portableZip = (Resolve-Path ./artifact/Lean-Beeftext-1.0.1-portable-windows-x64.zip).Path
           $portableExe = (Resolve-Path ./artifact/Lean-Beeftext-Portable/LeanBeeftext.exe).Path
-          $installer = (Resolve-Path ./Installer/_output/Lean-Beeftext-Setup-1.0.0.exe).Path
+          $installer = (Resolve-Path ./Installer/_output/Lean-Beeftext-Setup-1.0.1.exe).Path
           $installedExe = (Resolve-Path ./Installer/_staging/installed/LeanBeeftext.exe).Path
 
           $appSignature = Get-AuthenticodeSignature -LiteralPath $installedExe
@@ -493,14 +493,14 @@ jobs:
             throw 'The installed and portable final signed executable hashes differ.'
           }
           @(
-            "$((Get-FileHash -LiteralPath $portableZip -Algorithm SHA256).Hash.ToLowerInvariant())  Lean-Beeftext-1.0.0-portable-windows-x64.zip"
+            "$((Get-FileHash -LiteralPath $portableZip -Algorithm SHA256).Hash.ToLowerInvariant())  Lean-Beeftext-1.0.1-portable-windows-x64.zip"
             "$portableExeHash  portable/LeanBeeftext.exe"
-            "$((Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant())  Lean-Beeftext-Setup-1.0.0.exe"
+            "$((Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant())  Lean-Beeftext-Setup-1.0.1.exe"
             "$installedExeHash  installed/LeanBeeftext.exe"
           ) | Set-Content -LiteralPath ./artifact/DISTRIBUTION_SHA256SUMS.txt -Encoding ascii
 
           @(
-            'Product: Lean Beeftext 1.0.0 signed production candidate'
+            'Product: Lean Beeftext 1.0.1 signed production candidate'
             "Repository: $env:GITHUB_REPOSITORY"
             "Source commit: $((git rev-parse HEAD).Trim())"
             "Workflow run: $env:GITHUB_RUN_ID"
@@ -520,7 +520,7 @@ jobs:
             "Installer timestamp subject: $($installerSignature.TimeStamperCertificate.Subject)"
           ) | Set-Content -LiteralPath ./artifact/PRODUCTION_SIGNING_REPORT.txt -Encoding utf8
 
-          Copy-Item -LiteralPath $installer -Destination ./artifact/Lean-Beeftext-Setup-1.0.0.exe
+          Copy-Item -LiteralPath $installer -Destination ./artifact/Lean-Beeftext-Setup-1.0.1.exe
           Get-Content -LiteralPath ./artifact/DISTRIBUTION_SHA256SUMS.txt
           Get-Content -LiteralPath ./artifact/PRODUCTION_SIGNING_REPORT.txt
           Get-Content -LiteralPath ./artifact/UNINSTALLER_SIGNATURE.txt
@@ -547,7 +547,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: Lean-Beeftext-1.0.0-production-signing-diagnostics
+          name: Lean-Beeftext-1.0.1-production-signing-diagnostics
           path: |
             build-output.log
             test-output.log
@@ -559,9 +559,9 @@ jobs:
       - name: Upload signed portable candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: Lean-Beeftext-1.0.0-signed-portable-windows-x64
+          name: Lean-Beeftext-1.0.1-signed-portable-windows-x64
           path: |
-            artifact/Lean-Beeftext-1.0.0-portable-windows-x64.zip
+            artifact/Lean-Beeftext-1.0.1-portable-windows-x64.zip
             artifact/DISTRIBUTION_SHA256SUMS.txt
             artifact/PRODUCTION_SIGNING_REPORT.txt
             artifact/UNINSTALLER_SIGNATURE.txt
@@ -572,9 +572,9 @@ jobs:
       - name: Upload signed installer candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: Lean-Beeftext-1.0.0-signed-installer
+          name: Lean-Beeftext-1.0.1-signed-installer
           path: |
-            artifact/Lean-Beeftext-Setup-1.0.0.exe
+            artifact/Lean-Beeftext-Setup-1.0.1.exe
             artifact/DISTRIBUTION_SHA256SUMS.txt
             artifact/PRODUCTION_SIGNING_REPORT.txt
             artifact/UNINSTALLER_SIGNATURE.txt

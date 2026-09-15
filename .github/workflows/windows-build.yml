@@ -158,7 +158,7 @@ jobs:
           if (Test-Path ./Installer/_staging/installed/PortableApps.bin) { throw 'Installed payload contains PortableApps.bin.' }
           if (-not (Test-Path ./artifact/Lean-Beeftext-Portable/Portable.bin)) { throw 'Portable payload is missing Portable.bin.' }
           Compress-Archive -Path ./artifact/Lean-Beeftext-Portable/* `
-            -DestinationPath ./artifact/Lean-Beeftext-1.0.0-portable-windows-x64.zip -CompressionLevel Optimal -Force
+            -DestinationPath ./artifact/Lean-Beeftext-1.0.1-portable-windows-x64.zip -CompressionLevel Optimal -Force
 
       - name: Record installed payload audit
         shell: pwsh
@@ -237,13 +237,13 @@ jobs:
         run: |
           & $env:INNO_COMPILER ./Installer/LeanBeeftext.iss 2>&1 | Tee-Object -FilePath installer-build-output.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          if (-not (Test-Path ./Installer/_output/Lean-Beeftext-Setup-1.0.0.exe)) { throw 'Inno did not produce the expected installer.' }
+          if (-not (Test-Path ./Installer/_output/Lean-Beeftext-Setup-1.0.1.exe)) { throw 'Inno did not produce the expected installer.' }
 
       - name: Exercise install, reinstall, and data-preserving uninstall
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $setup = (Resolve-Path ./Installer/_output/Lean-Beeftext-Setup-1.0.0.exe).Path
+          $setup = (Resolve-Path ./Installer/_output/Lean-Beeftext-Setup-1.0.1.exe).Path
           $installDirectory = Join-Path $env:ProgramFiles 'Lean Beeftext'
           $documents = [Environment]::GetFolderPath([Environment+SpecialFolder]::MyDocuments)
           $dataDirectory = Join-Path $documents 'Lean Beeftext'
@@ -298,17 +298,17 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $portableZip = './artifact/Lean-Beeftext-1.0.0-portable-windows-x64.zip'
+          $portableZip = './artifact/Lean-Beeftext-1.0.1-portable-windows-x64.zip'
           $portableExe = './artifact/Lean-Beeftext-Portable/LeanBeeftext.exe'
-          $installer = './Installer/_output/Lean-Beeftext-Setup-1.0.0.exe'
+          $installer = './Installer/_output/Lean-Beeftext-Setup-1.0.1.exe'
           $installedExe = './Installer/_staging/installed/LeanBeeftext.exe'
           @(
-            "$((Get-FileHash -LiteralPath $portableZip -Algorithm SHA256).Hash.ToLowerInvariant())  Lean-Beeftext-1.0.0-portable-windows-x64.zip"
+            "$((Get-FileHash -LiteralPath $portableZip -Algorithm SHA256).Hash.ToLowerInvariant())  Lean-Beeftext-1.0.1-portable-windows-x64.zip"
             "$((Get-FileHash -LiteralPath $portableExe -Algorithm SHA256).Hash.ToLowerInvariant())  portable/LeanBeeftext.exe"
-            "$((Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant())  Lean-Beeftext-Setup-1.0.0.exe"
+            "$((Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant())  Lean-Beeftext-Setup-1.0.1.exe"
             "$((Get-FileHash -LiteralPath $installedExe -Algorithm SHA256).Hash.ToLowerInvariant())  installed/LeanBeeftext.exe"
           ) | Set-Content -LiteralPath ./artifact/DISTRIBUTION_SHA256SUMS.txt -Encoding ascii
-          Copy-Item -LiteralPath $installer -Destination ./artifact/Lean-Beeftext-Setup-1.0.0.exe
+          Copy-Item -LiteralPath $installer -Destination ./artifact/Lean-Beeftext-Setup-1.0.1.exe
           Get-Content -LiteralPath ./artifact/DISTRIBUTION_SHA256SUMS.txt
 
       - name: Verify tracked source remains clean after packaging
@@ -326,7 +326,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: Lean-Beeftext-1.0.0-build-diagnostics
+          name: Lean-Beeftext-1.0.1-build-diagnostics
           path: |
             build-output.log
             test-output.log
@@ -338,9 +338,9 @@ jobs:
       - name: Upload portable distribution
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: Lean-Beeftext-1.0.0-portable-windows-x64
+          name: Lean-Beeftext-1.0.1-portable-windows-x64
           path: |
-            artifact/Lean-Beeftext-1.0.0-portable-windows-x64.zip
+            artifact/Lean-Beeftext-1.0.1-portable-windows-x64.zip
             artifact/DISTRIBUTION_SHA256SUMS.txt
             artifact/INSTALLED_PAYLOAD_AUDIT.txt
           if-no-files-found: error
@@ -349,9 +349,9 @@ jobs:
       - name: Upload installed distribution
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: Lean-Beeftext-Setup-1.0.0
+          name: Lean-Beeftext-Setup-1.0.1
           path: |
-            artifact/Lean-Beeftext-Setup-1.0.0.exe
+            artifact/Lean-Beeftext-Setup-1.0.1.exe
             artifact/DISTRIBUTION_SHA256SUMS.txt
             artifact/INSTALLED_PAYLOAD_AUDIT.txt
           if-no-files-found: error
