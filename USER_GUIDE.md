@@ -169,7 +169,7 @@ Lean Beeftext types:
 Hello,\nThank you
 ```
 
-The `\n` is just visible text. It does **not** press Enter and it does **not** move to the next line.
+The `\n` is called **backslash-n**. It is literally just two characters: a backslash (`\`) and the letter `n`. Lean Beeftext types those characters on the screen. It does **not** press Enter and it does **not** move to the next line.
 
 ### Optional: allow real line breaks
 
@@ -184,7 +184,7 @@ This is useful in Word, Outlook, and other places where you want multi-line text
 
 But there is one important catch: in some chat boxes, forms, and single-line fields, a real line break can behave like pressing **Enter**. That can send a message or submit a form.
 
-**Simple rule:** Leave the safe default on unless you know you want your combo to create real new lines.
+**Simple rule:** if you want Lean Beeftext to stay on the same line and show `\n`, keep the safe default. If you want Lean Beeftext to actually move to the next line, choose **Allow real line breaks**.
 
 ## 7. Preferences you may actually care about
 
@@ -193,7 +193,7 @@ Open **Preferences** when you want to change how Lean Beeftext behaves.
 A few useful settings:
 
 - **Automatic or manual substitution**: choose whether Lean expands keywords automatically or only when you trigger them manually.
-- **Play sound when completing a combo**: if Lean Beeftext makes a sound after every combo and you do not want it, turn this setting off.
+- **Play sound on combo**: if Lean Beeftext makes a sound after every combo and you do not want it, turn this setting off.
 - **Multiline snippets**: choose between visible `\n` text and real line breaks.
 - **Quick Search shortcut**: choose the keyboard shortcut for Quick Search.
 
@@ -201,7 +201,7 @@ A few useful settings:
 
 Go to **Preferences > Behavior** and turn off:
 
-**Play sound when completing a combo**
+**Play sound on combo**
 
 The current public release may have that setting enabled on a fresh profile.
 
@@ -239,7 +239,7 @@ Use a more distinctive keyword, such as `;something` instead of an ordinary word
 
 ### I hear a sound after every combo
 
-Go to **Preferences > Behavior** and turn off **Play sound when completing a combo**.
+Go to **Preferences > Behavior** and turn off **Play sound on combo**.
 
 ### I forgot the keyword
 
