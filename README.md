@@ -128,7 +128,7 @@ Lean Beeftext types:
 Hello,\nThank you
 ```
 
-The `\n` is just visible text. It does **not** press Enter and does **not** move to a new line.
+The `\n` is called **backslash-n**. It is literally two characters: a backslash (`\`) and the letter `n`. Lean Beeftext types those characters on the screen. It does **not** press Enter and does **not** move to a new line.
 
 ### Allow real line breaks
 
@@ -143,14 +143,14 @@ This is useful in Word, Outlook, and other places where you want multi-line text
 
 But a real line break can behave like pressing **Enter** in some chat boxes, forms, and single-line fields. That can send a message or submit a form.
 
-**Simple rule:** leave the safe default on unless you know you want your combo to create real new lines.
+**Simple rule:** keep the safe setting if you want Lean Beeftext to show `\n` and stay on the same line. Choose **Allow real line breaks** only when you want Lean Beeftext to actually move to the next line.
 
 ## Completion Sound
 
 If Lean Beeftext plays a sound after every completed combo and you do not want it:
 
 1. Open **Preferences > Behavior**.
-2. Turn off **Play sound when completing a combo**.
+2. Turn off **Play sound on combo**.
 
 The current public release may have this setting enabled on a fresh profile.
 
