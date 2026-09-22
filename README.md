@@ -148,7 +148,7 @@ Date/time offsets use a separate signed syntax before the format. They may combi
 
 For example, `#{dateTime:+1w-2d:yyyy-MM-dd}` means "five days from now, formatted as year-month-day."
 
-Malformed, unknown, and blocked variables remain visible as literal text. Lean Beeftext does not allow combo variables to read the clipboard, read environment variables, execute PowerShell, generate arbitrary key events, generate arbitrary keyboard shortcuts, or introduce programmed delays. For example, `#{clipboard}`, `#{envVar:USERNAME}`, `#{powershell:C:\\test.ps1}`, `#{key:enter}`, `#{shortcut:Win+R}`, and `#{delay:500}` stay literal.
+Malformed, unknown, and blocked variables remain visible as literal text. Lean Beeftext does not allow combo variables to read the clipboard, read environment variables, execute PowerShell, generate arbitrary key events, generate arbitrary keyboard shortcuts, or introduce programmed delays. For example, `#{clipboard}`, `#{envVar:USERNAME}`, `#{powershell:C:\test.ps1}`, `#{key:enter}`, `#{shortcut:Win+R}`, and `#{delay:500}` stay literal.
 
 ## Cursor Placement
 
