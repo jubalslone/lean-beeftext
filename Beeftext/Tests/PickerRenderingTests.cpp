@@ -10,6 +10,14 @@ int main(int argc, char **argv) {
 	QString const mode = app.arguments().value(1, "light");
 	app.styleHints()->setColorScheme(mode == "dark" ? Qt::ColorScheme::Dark : Qt::ColorScheme::Light);
 	QCoreApplication::processEvents();
+	QString const requestedStyle = app.arguments().value(2);
+	if (!requestedStyle.isEmpty()) {
+		QStyle *style = QStyleFactory::create(requestedStyle);
+		if (!style)
+			return 1;
+		app.setStyle(style);
+	}
+	QString const nativeStyle = app.style()->objectName();
 	applySystemTheme();
 	QWidget window;
 	Ui::PickerWindow ui;
@@ -36,13 +44,13 @@ int main(int argc, char **argv) {
 	QTimer::singleShot(500, &loop, &QEventLoop::quit);
 	loop.exec();
 	QDir().mkpath("picker-evidence");
-	QString const prefix = "picker-evidence/" + mode;
+	QString const prefix = "picker-evidence/" + mode + "-" + nativeStyle;
 	window.grab().save(prefix + "-window.png");
 	if (window.screen())
 		window.screen()->grabWindow(0).save(prefix + "-desktop.png");
 	QTextStream out(stdout);
 	out << "Theme=" << mode << " effective=" << int(app.styleHints()->colorScheme())
-		<< " style=" << app.style()->objectName() << "\n";
+		<< " style=" << nativeStyle << "\n";
 	for (QWidget *widget: {static_cast<QWidget *>(&window), static_cast<QWidget *>(ui.editSearch),
 		static_cast<QWidget *>(ui.listViewResults), ui.listViewResults->viewport()}) {
 		out << widget->metaObject()->className() << " " << widget->objectName() << "\n";

@@ -224,10 +224,13 @@ if(BUILD_TESTING)
 	get_target_property(pickerTestSources Beeftext SOURCES)
 	list(REMOVE_ITEM pickerTestSources main.cpp Beeftext.rc)
 	add_executable(PickerRenderingTests Tests/PickerRenderingTests.cpp ${pickerTestSources})
+	set_target_properties(PickerRenderingTests PROPERTIES AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/Picker")
 	target_precompile_headers(PickerRenderingTests PRIVATE stdafx.h)
 	target_link_libraries(PickerRenderingTests Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network XMiLib Winmm Shell32 Ole32 Rstrtmgr)
 	add_test(NAME PickerRenderingLight COMMAND PickerRenderingTests light)
 	add_test(NAME PickerRenderingDark COMMAND PickerRenderingTests dark)
+	add_test(NAME PickerRenderingWindows11Light COMMAND PickerRenderingTests light windows11)
+	add_test(NAME PickerRenderingWindows11Dark COMMAND PickerRenderingTests dark windows11)
 
    add_executable(LeanSecurityModelTests
       Tests/TLFSafeBuildTests.cpp
