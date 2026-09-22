@@ -188,4 +188,19 @@ void writeAllowRealLineBreaksInSnippets(QSettings &settings, bool value) {
 }
 
 
+bool readPlaySoundOnCombo(QSettings const &settings) {
+	QString const key = QString::fromLatin1(kPlaySoundOnComboSettingKey);
+	if (!settings.contains(key))
+		return kDefaultPlaySoundOnCombo;
+
+	QVariant const value = settings.value(key, QVariant::fromValue(kDefaultPlaySoundOnCombo));
+	return value.canConvert<bool>() ? qvariant_cast<bool>(value) : kDefaultPlaySoundOnCombo;
+}
+
+
+void writePlaySoundOnCombo(QSettings &settings, bool value) {
+	settings.setValue(QString::fromLatin1(kPlaySoundOnComboSettingKey), value);
+}
+
+
 } // namespace tlf
