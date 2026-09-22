@@ -10,10 +10,16 @@
     background-color: palette(window);
 }
 
-#editSearch,
-#listViewResults {
+#editSearch {
     border: 1px solid palette(mid);
     background-color: palette(base);
+}
+
+/* Let the native view own its background. Qt's Windows 11 style makes the
+ * viewport Base transparent; resolving it back through palette(base) in QSS
+ * turns it into black and hides unselected black text in light mode. */
+#listViewResults {
+    border: 1px solid palette(mid);
 }
 
 #labelLogo {

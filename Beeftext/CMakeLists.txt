@@ -231,6 +231,7 @@ if(BUILD_TESTING)
 	add_test(NAME PickerRenderingDark COMMAND PickerRenderingTests dark)
 	add_test(NAME PickerRenderingWindows11Light COMMAND PickerRenderingTests light windows11)
 	add_test(NAME PickerRenderingWindows11Dark COMMAND PickerRenderingTests dark windows11)
+	add_test(NAME PickerRenderingKnownBrokenLight COMMAND PickerRenderingTests light windows11 known-broken)
 
    add_executable(LeanSecurityModelTests
       Tests/TLFSafeBuildTests.cpp
