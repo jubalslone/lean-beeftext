@@ -238,7 +238,7 @@ Lean Beeftext follows the Windows light or dark appearance setting. If you chang
 
 ## Install or Use Portable
 
-The normal Windows installer installs Lean Beeftext under `Program Files\\Lean Beeftext` and creates a Start Menu shortcut. A desktop shortcut is optional and unchecked by default.
+The normal Windows installer installs Lean Beeftext under `Program Files\Lean Beeftext` and creates a Start Menu shortcut. A desktop shortcut is optional and unchecked by default.
 
 Installed Lean Beeftext stores restorable user data in `Lean Beeftext` beneath the Windows Documents known folder, including `Settings.ini`, `comboList.json`, user translations/configuration, and migration recovery copies. If OneDrive Known Folder Move redirects Documents, that folder naturally follows the redirected Documents location; Lean Beeftext does not configure OneDrive. Diagnostic logs and last-use caches remain in Lean-specific LocalAppData to avoid unnecessary document-sync churn.
 
