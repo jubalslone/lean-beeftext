@@ -462,6 +462,60 @@ QString readRepositoryFile(QString const &relativePath) {
 }
 
 
+void testCompletionSoundPreferencePersistence() {
+	QTemporaryDir temporaryDirectory;
+	expect(temporaryDirectory.isValid(), "temporary completion-sound preference directory is available");
+	if (!temporaryDirectory.isValid())
+		return;
+
+	QStringList const settingsPaths = {
+		QDir(temporaryDirectory.path()).absoluteFilePath("Documents/Lean Beeftext/Settings.ini"),
+		QDir(temporaryDirectory.path()).absoluteFilePath("Portable/Data/Settings.ini"),
+	};
+	for (QString const &settingsPath: settingsPaths) {
+		expect(QDir().mkpath(QFileInfo(settingsPath).absolutePath()),
+			QString("completion-sound preference directory is created: %1").arg(settingsPath));
+
+		{
+			QSettings settings(settingsPath, QSettings::IniFormat);
+			expect(!tlf::readPlaySoundOnCombo(settings),
+				QString("missing completion-sound preference defaults off: %1").arg(settingsPath));
+			tlf::writePlaySoundOnCombo(settings, true);
+			settings.sync();
+			expect(settings.status() == QSettings::NoError,
+				QString("explicit enabled completion-sound preference is saved: %1").arg(settingsPath));
+		}
+		{
+			QSettings settings(settingsPath, QSettings::IniFormat);
+			expect(tlf::readPlaySoundOnCombo(settings),
+				QString("explicit enabled completion-sound preference survives reload: %1").arg(settingsPath));
+			tlf::writePlaySoundOnCombo(settings, false);
+			settings.sync();
+		}
+		{
+			QSettings settings(settingsPath, QSettings::IniFormat);
+			expect(!tlf::readPlaySoundOnCombo(settings),
+				QString("explicit disabled completion-sound preference survives reload: %1").arg(settingsPath));
+			tlf::writePlaySoundOnCombo(settings, true);
+			tlf::writePlaySoundOnCombo(settings, tlf::kDefaultPlaySoundOnCombo);
+			settings.sync();
+		}
+		{
+			QSettings settings(settingsPath, QSettings::IniFormat);
+			expect(!tlf::readPlaySoundOnCombo(settings),
+				QString("reset completion-sound preference defaults off: %1").arg(settingsPath));
+		}
+	}
+
+	QString const preferencesSource = readSourceFile("Preferences/PreferencesManager.cpp");
+	expect(preferencesSource.contains("setPlaySoundOnCombo(tlf::kDefaultPlaySoundOnCombo)")
+		&& preferencesSource.contains("tlf::writePlaySoundOnCombo(*settings_, value)")
+		&& preferencesSource.contains("return tlf::readPlaySoundOnCombo(*settings_)")
+		&& !preferencesSource.contains("kDefaultPlaySoundOnCombo = true"),
+		"PreferencesManager uses the tested default-off helper for reset, persistence, and reload");
+}
+
+
 void testRestrictedPortabilityUiSurface() {
 	QString const mainWindowUi = readSourceFile("MainWindow.ui");
 	expect(!mainWindowUi.contains("actionBackup") && !mainWindowUi.contains("actionRestore")
@@ -1175,6 +1229,7 @@ int main(int argc, char *argv[]) {
     testBlockedControlsInBothModes();
     testCursorPlan();
     testMultilinePreferencePersistence();
+	testCompletionSoundPreferencePersistence();
 	testComboExportBundle();
 	testComboPortabilityFiles();
 	testRestrictedPortabilityUiSurface();
