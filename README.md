@@ -4,16 +4,20 @@ Lean Beeftext is a privacy-focused, security-conscious text expander for Windows
 
 Type a short keyword and Lean Beeftext expands it into the text you use every day: signatures, addresses, boilerplate, dates, form language, and other frequently repeated text.
 
+**New to Lean Beeftext? Start with the [5-minute User Guide](USER_GUIDE.md).**
+
 Lean Beeftext is built on a project we genuinely like. Beeftext provides a fast, practical local text-expansion workflow; Lean Beeftext adapts that foundation for environments where privacy, predictability, and a narrower execution surface matter more than extensibility.
 
 ## Download
 
-The current public release is [Lean Beeftext 1.0.0](https://github.com/jubalslone/lean-beeftext/releases/tag/1.0.0), available as a normal Windows installer and a self-contained portable ZIP.
+Download the [latest public release](https://github.com/jubalslone/lean-beeftext/releases/latest).
 
-- Installer: `Lean-Beeftext-Setup-1.0.0.exe`
-- Portable: `Lean-Beeftext-1.0.0-portable-windows-x64.zip`
+Two Windows distributions are available:
 
-The Windows executables are Authenticode-signed and RFC 3161 timestamped through Microsoft Azure Artifact Signing. Because the signing identity and application are new, Microsoft Defender SmartScreen may initially show an unfamiliar-app warning while reputation accumulates. The release page publishes SHA-256 hashes for verification.
+- **Installer** — recommended for normal use
+- **Portable ZIP** — self-contained and keeps its data beside the application
+
+The Windows executables are Authenticode-signed and RFC 3161 timestamped through Microsoft Azure Artifact Signing. Because the signing identity and application are new, Microsoft Defender SmartScreen may initially show an unfamiliar-app warning while reputation accumulates. Each release page publishes SHA-256 hashes for verification.
 
 ## Why Lean Beeftext?
 
@@ -37,6 +41,8 @@ Malformed, unknown, or deliberately blocked variable syntax remains visible as l
 
 ## Creating a Combo
 
+For a step-by-step introduction, see the [User Guide](USER_GUIDE.md).
+
 Open Lean Beeftext, choose **Combos > New**, then enter a keyword and snippet. For example, the keyword `;addr` could expand to:
 
 ```text
@@ -50,7 +56,13 @@ Save the combo, then type its keyword in a normal text field. Triggering can be 
 
 For automatic substitution, strongly prefer a keyword that starts with a character or prefix you do not normally type as part of ordinary prose. This greatly reduces accidental expansions.
 
-Lean Beeftext accepts printable, non-whitespace characters in combo keywords, so punctuation prefixes are supported. Useful conventions include `;addr`, `$sig`, or `::meeting`. Pick one convention that fits the way you type and use it consistently across your combo library.
+A semicolon is a simple default:
+
+- `;addr`
+- `;sig`
+- `;meeting`
+
+Other useful conventions include `$sig` or `::meeting`. Pick one convention that fits the way you type and use it consistently across your combo library.
 
 There is no universally best prefix. A semicolon is convenient for many people, while `$` or `::` may be a poor choice if you frequently write code, shell commands, or other text where those characters are common. The important part is choosing something distinctive in your own workflow. Bare ordinary words such as `address`, `thanks`, or `meeting` are much more likely to expand unintentionally when automatic substitution is enabled.
 
@@ -74,7 +86,56 @@ Lean Beeftext supports the following variables:
 - `#{input:Name}` — asks for text at expansion time using the prompt label `Name`.
 - `#{cursor}` — sets the caret position after expansion.
 
-Date/time formats use Qt date/time pattern letters. Date/time offsets may combine signed units:
+### Custom date/time formatting
+
+Only **`dateTime`** accepts a custom Qt format pattern. Use `#{dateTime:FORMAT}` or `#{dateTime:OFFSET:FORMAT}`.
+
+`#{date}` and `#{time}` use your system locale's normal date or time format; forms such as `#{date:yyyy-MM-dd}` or `#{time:hh:mm}` are not supported custom-format variables.
+
+Plain `#{dateTime}` also uses your system locale's normal long date/time format. On an English (United States) system, Qt's long date/time pattern is equivalent to:
+
+```text
+#{dateTime:dddd, MMMM d, yyyy h:mm:ss AP t}
+```
+
+For example:
+
+```text
+Tuesday, September 1, 2026 11:30:00 PM CDT
+```
+
+The exact wording and time-zone text depend on your Windows locale and time zone.
+
+A few useful custom formats:
+
+| Variable | Example result |
+| --- | --- |
+| `#{dateTime:M/d/yyyy}` | `9/1/2026` |
+| `#{dateTime:MM/dd/yyyy}` | `09/01/2026` |
+| `#{dateTime:MMMM d, yyyy}` | `September 1, 2026` |
+| `#{dateTime:ddd, MMMM d, yyyy}` | `Tue, September 1, 2026` |
+| `#{dateTime:dddd, MMMM d, yyyy}` | `Tuesday, September 1, 2026` |
+| `#{dateTime:yyyy-MM-dd}` | `2026-09-01` |
+| `#{dateTime:MMM d, yyyy 'at' h:mm AP}` | `Sep 1, 2026 at 11:30 PM` |
+| `#{dateTime:dddd, MMMM d, yyyy h:mm:ss AP t}` | `Tuesday, September 1, 2026 11:30:00 PM CDT` |
+| `#{dateTime:+1d:dddd, MMMM d, yyyy}` | `Wednesday, September 2, 2026` |
+
+Common Qt format letters:
+
+- `d` = day number; `dd` = zero-padded day; `ddd` = short weekday; `dddd` = full weekday
+- `M` = month number; `MM` = zero-padded month; `MMM` = short month name; `MMMM` = full month name
+- `yy` = two-digit year; `yyyy` = four-digit year
+- `h` = hour; `hh` = zero-padded hour
+- `m` = minute; `mm` = zero-padded minute
+- `s` = second; `ss` = zero-padded second
+- `AP` = `AM`/`PM`; `ap` = `am`/`pm`
+- `t` = time-zone indicator
+- `z` / `zzz` = milliseconds
+- `w` / `ww` = week number (Lean Beeftext extension)
+
+**Watch the capitalization:** `M` means **month**, while lowercase `m` means **minute**.
+
+Date/time offsets use a separate signed syntax before the format. They may combine:
 
 - `y` = years
 - `M` = months
@@ -84,6 +145,8 @@ Date/time formats use Qt date/time pattern letters. Date/time offsets may combin
 - `m` = minutes
 - `s` = seconds
 - `z` = milliseconds
+
+For example, `#{dateTime:+1w-2d:yyyy-MM-dd}` means "five days from now, formatted as year-month-day."
 
 Malformed, unknown, and blocked variables remain visible as literal text. Lean Beeftext does not allow combo variables to read the clipboard, read environment variables, execute PowerShell, generate arbitrary key events, generate arbitrary keyboard shortcuts, or introduce programmed delays. For example, `#{clipboard}`, `#{envVar:USERNAME}`, `#{powershell:C:\test.ps1}`, `#{key:enter}`, `#{shortcut:Win+R}`, and `#{delay:500}` stay literal.
 
@@ -95,12 +158,52 @@ Caret movement is allowed only when the text after the final marker can be count
 
 ## Multiline Snippets
 
+A **line break** simply means starting the next words on a new line, like pressing **Enter**.
+
 Preferences > Behavior offers two modes:
 
-- **Show line breaks as visible `\n` text** is the default. CR, LF, and CRLF line endings display as `\n` and do not cause a line break in the destination.
-- **Allow real line breaks** is opt-in. Ordinary snippet text, safe evaluated text, input results, and nested-combo results may produce real line breaks.
+### Show line breaks as visible `\n` text
 
-Real line breaks can act like Enter in the destination application. In chat boxes, forms, and single-line fields, that can submit content or trigger another action. Use the visible-`\n` mode wherever that behavior is not acceptable.
+This is the safe default.
+
+If a snippet contains:
+
+```text
+Hello,
+Thank you
+```
+
+Lean Beeftext types:
+
+```text
+Hello,\nThank you
+```
+
+The `\n` is called **backslash-n**. It is literally two characters: a backslash (`\`) and the letter `n`. Lean Beeftext types those characters on the screen. It does **not** press Enter and does **not** move to a new line.
+
+### Allow real line breaks
+
+This opt-in setting actually creates the new line:
+
+```text
+Hello,
+Thank you
+```
+
+This is useful in Word, Outlook, and other places where you want multi-line text.
+
+But a real line break can behave like pressing **Enter** in some chat boxes, forms, and single-line fields. That can send a message or submit a form.
+
+**Simple rule:** keep the safe setting if you want Lean Beeftext to show `\n` and stay on the same line. Choose **Allow real line breaks** only when you want Lean Beeftext to actually move to the next line.
+
+## Completion Sound
+
+If Lean Beeftext plays a sound after every completed combo and you do not want it:
+
+1. Open **Preferences > Behavior**.
+2. Turn off **Play sound on combo**.
+
+The current public release may have this setting enabled on a fresh profile.
 
 ## Import and Export
 
@@ -196,6 +299,6 @@ cmake --build build --config Release --parallel
 ctest --test-dir build -C Release --output-on-failure
 ```
 
-The GitHub Actions Windows workflow performs the same configure, Release build, complete test run, clean-source checks, shared installed/portable staging, provenance recording, and packaged-file checksum generation. It compiles the installer, checks the installed payload cannot activate portable mode, and exercises silent install, same-version reinstall, and data-preserving uninstall. It produces both a portable QA artifact and `Lean-Beeftext-Setup-1.0.0.exe` from the exact same source commit.
+The GitHub Actions Windows workflow performs the same configure, Release build, complete test run, clean-source checks, shared installed/portable staging, provenance recording, and packaged-file checksum generation. It compiles the installer, checks the installed payload cannot activate portable mode, and exercises silent install, same-version reinstall, and data-preserving uninstall. It produces both a portable QA artifact and installer from the exact same source commit.
 
 Project links: [repository](https://github.com/jubalslone/lean-beeftext), [issues](https://github.com/jubalslone/lean-beeftext/issues), and [releases](https://github.com/jubalslone/lean-beeftext/releases).
