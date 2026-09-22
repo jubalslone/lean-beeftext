@@ -101,7 +101,7 @@ Plain `#{dateTime}` also uses your system locale's normal long date/time format.
 For example:
 
 ```text
-Monday, September 21, 2026 11:30:00 PM CDT
+Tuesday, September 1, 2026 11:30:00 PM CDT
 ```
 
 The exact wording and time-zone text depend on your Windows locale and time zone.
@@ -110,11 +110,15 @@ A few useful custom formats:
 
 | Variable | Example result |
 | --- | --- |
-| `#{dateTime:M/d/yyyy}` | `9/21/2026` |
-| `#{dateTime:yyyy-MM-dd}` | `2026-09-21` |
-| `#{dateTime:MMM d, yyyy 'at' h:mm AP}` | `Sep 21, 2026 at 11:30 PM` |
-| `#{dateTime:dddd, MMMM d, yyyy h:mm:ss AP t}` | `Monday, September 21, 2026 11:30:00 PM CDT` |
-| `#{dateTime:+1d:dddd, MMMM d, yyyy}` | `Tuesday, September 22, 2026` |
+| `#{dateTime:M/d/yyyy}` | `9/1/2026` |
+| `#{dateTime:MM/dd/yyyy}` | `09/01/2026` |
+| `#{dateTime:MMMM d, yyyy}` | `September 1, 2026` |
+| `#{dateTime:ddd, MMMM d, yyyy}` | `Tue, September 1, 2026` |
+| `#{dateTime:dddd, MMMM d, yyyy}` | `Tuesday, September 1, 2026` |
+| `#{dateTime:yyyy-MM-dd}` | `2026-09-01` |
+| `#{dateTime:MMM d, yyyy 'at' h:mm AP}` | `Sep 1, 2026 at 11:30 PM` |
+| `#{dateTime:dddd, MMMM d, yyyy h:mm:ss AP t}` | `Tuesday, September 1, 2026 11:30:00 PM CDT` |
+| `#{dateTime:+1d:dddd, MMMM d, yyyy}` | `Wednesday, September 2, 2026` |
 
 Common Qt format letters:
 
