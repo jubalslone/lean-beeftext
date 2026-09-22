@@ -9,33 +9,13 @@
 
 #include "stdafx.h"
 #include "EmojiManager.h"
+#include "EmojiRuntimeData.h"
 #include "BeeftextGlobals.h"
 #include "LastUse/EmojiLastUseFile.h"
 #include <XMiLib/Exception.h>
 
 
 using namespace xmilib;
-
-
-//****************************************************************************************************************************************************
-/// \return The path of the emoji files
-//****************************************************************************************************************************************************
-QString emojiFilePath() {
-    QString const fileName = "emojis.json";
-    QDir const appDir(qApp->applicationDirPath());
-    QString filePath = appDir.absoluteFilePath("emojis/" + fileName);
-    if (QFile(filePath).exists())
-        return filePath;
-
-    // we look a few folders above, in case we are in a dev environment
-    for (int i = 0; i < 10; i++) {
-        QFileInfo const fileInfo(QString("../").repeated(i) + QString("Submodules/emojilib/") + fileName);
-        if (fileInfo.exists())
-            return fileInfo.canonicalFilePath();
-    }
-
-    return QString();
-}
 
 
 //****************************************************************************************************************************************************
@@ -132,28 +112,12 @@ EmojiManager::EmojiManager()
 //****************************************************************************************************************************************************
 bool EmojiManager::load(QString const &path) {
     try {
-        QFile file(path);
-        if (!file.exists())
-            throw Exception("could not find emoji list file.");
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-            throw Exception("could not open emoji list file.");
-        QJsonParseError parseError {};
-        QJsonDocument const doc = QJsonDocument::fromJson(file.readAll(), &parseError);
-        if (QJsonParseError::NoError != parseError.error)
-            throw Exception(QString("Invalid emoji file at index %1: %2").arg(parseError.offset)
-                .arg(parseError.errorString()));
-        if (!doc.isObject())
-            throw Exception("The emoji list file is invalid.");
-        QJsonObject const rootObject = doc.object();
+		QJsonObject const rootObject = readEmojiRuntimeData(path);
 
         for (QJsonObject::const_iterator it = rootObject.begin(); it != rootObject.end(); ++it) {
             QJsonValue const value = it.value();
-            if (!value.isObject())
-                throw Exception();
             QJsonObject const object = value.toObject();
             QString const chars = object["char"].toString(QString());
-            if (chars.isEmpty())
-                throw Exception();
             QString const shortcode = it.key();
             emojis_.append(std::make_shared<Emoji>(shortcode, chars, object["category"].toString()));
         }

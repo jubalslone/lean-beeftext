@@ -79,6 +79,19 @@ foreach ($runtimeDll in @('MSVCP140.dll', 'VCRUNTIME140.dll', 'VCRUNTIME140_1.dl
 }
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
+
+# This is required runtime data, not a developer/source-tree convenience.
+$emojiSource = Join-Path $repositoryRoot 'Submodules/emojilib/emojis.json'
+& "$PSScriptRoot/TestEmojiRuntimeData.ps1" -Path $emojiSource
+$emojiDirectory = Join-Path $Destination 'emojis'
+New-Item -ItemType Directory -Path $emojiDirectory -Force | Out-Null
+$emojiDestination = Join-Path $emojiDirectory 'emojis.json'
+Copy-Item -LiteralPath $emojiSource -Destination $emojiDestination
+& "$PSScriptRoot/TestEmojiRuntimeData.ps1" -Path $emojiDestination
+if ((Get-FileHash -LiteralPath $emojiSource).Hash -cne (Get-FileHash -LiteralPath $emojiDestination).Hash) {
+	throw 'Packaged emoji data differs from the pinned emojilib source.'
+}
+
 foreach ($document in @(
 	'LICENSE',
 	'LICENSE.GPL-3.0.txt',

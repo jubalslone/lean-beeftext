@@ -219,6 +219,10 @@ target_link_libraries(Beeftext Ole32)
 target_link_libraries(Beeftext Rstrtmgr)
 
 if(BUILD_TESTING)
+	add_executable(EmojiRuntimeTests Tests/EmojiRuntimeTests.cpp)
+	target_link_libraries(EmojiRuntimeTests Qt6::Core XMiLib)
+	add_test(NAME EmojiRuntimeTests COMMAND EmojiRuntimeTests)
+
    add_executable(LeanSecurityModelTests
       Tests/TLFSafeBuildTests.cpp
       TLFSafeBuild.cpp
