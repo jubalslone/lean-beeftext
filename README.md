@@ -86,7 +86,52 @@ Lean Beeftext supports the following variables:
 - `#{input:Name}` — asks for text at expansion time using the prompt label `Name`.
 - `#{cursor}` — sets the caret position after expansion.
 
-Date/time formats use Qt date/time pattern letters. Date/time offsets may combine signed units:
+### Custom date/time formatting
+
+Only **`dateTime`** accepts a custom Qt format pattern. Use `#{dateTime:FORMAT}` or `#{dateTime:OFFSET:FORMAT}`.
+
+`#{date}` and `#{time}` use your system locale's normal date or time format; forms such as `#{date:yyyy-MM-dd}` or `#{time:hh:mm}` are not supported custom-format variables.
+
+Plain `#{dateTime}` also uses your system locale's normal long date/time format. On an English (United States) system, Qt's long date/time pattern is equivalent to:
+
+```text
+#{dateTime:dddd, MMMM d, yyyy h:mm:ss AP t}
+```
+
+For example:
+
+```text
+Monday, September 21, 2026 11:30:00 PM CDT
+```
+
+The exact wording and time-zone text depend on your Windows locale and time zone.
+
+A few useful custom formats:
+
+| Variable | Example result |
+| --- | --- |
+| `#{dateTime:M/d/yyyy}` | `9/21/2026` |
+| `#{dateTime:yyyy-MM-dd}` | `2026-09-21` |
+| `#{dateTime:MMM d, yyyy 'at' h:mm AP}` | `Sep 21, 2026 at 11:30 PM` |
+| `#{dateTime:dddd, MMMM d, yyyy h:mm:ss AP t}` | `Monday, September 21, 2026 11:30:00 PM CDT` |
+| `#{dateTime:+1d:dddd, MMMM d, yyyy}` | `Tuesday, September 22, 2026` |
+
+Common Qt format letters:
+
+- `d` = day number; `dd` = zero-padded day; `ddd` = short weekday; `dddd` = full weekday
+- `M` = month number; `MM` = zero-padded month; `MMM` = short month name; `MMMM` = full month name
+- `yy` = two-digit year; `yyyy` = four-digit year
+- `h` = hour; `hh` = zero-padded hour
+- `m` = minute; `mm` = zero-padded minute
+- `s` = second; `ss` = zero-padded second
+- `AP` = `AM`/`PM`; `ap` = `am`/`pm`
+- `t` = time-zone indicator
+- `z` / `zzz` = milliseconds
+- `w` / `ww` = week number (Lean Beeftext extension)
+
+**Watch the capitalization:** `M` means **month**, while lowercase `m` means **minute**.
+
+Date/time offsets use a separate signed syntax before the format. They may combine:
 
 - `y` = years
 - `M` = months
@@ -96,6 +141,8 @@ Date/time formats use Qt date/time pattern letters. Date/time offsets may combin
 - `m` = minutes
 - `s` = seconds
 - `z` = milliseconds
+
+For example, `#{dateTime:+1w-2d:yyyy-MM-dd}` means "five days from now, formatted as year-month-day."
 
 Malformed, unknown, and blocked variables remain visible as literal text. Lean Beeftext does not allow combo variables to read the clipboard, read environment variables, execute PowerShell, generate arbitrary key events, generate arbitrary keyboard shortcuts, or introduce programmed delays. For example, `#{clipboard}`, `#{envVar:USERNAME}`, `#{powershell:C:\\test.ps1}`, `#{key:enter}`, `#{shortcut:Win+R}`, and `#{delay:500}` stay literal.
 
