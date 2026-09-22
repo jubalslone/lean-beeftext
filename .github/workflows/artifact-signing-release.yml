@@ -138,13 +138,13 @@ jobs:
             throw 'Installed and portable staging did not originate from the same executable bytes.'
           }
 
-      - name: Verify unsigned staged payloads and mode isolation
+      - name: Test emoji loading in isolated installed and portable payloads
         shell: pwsh
         run: |
           ./Installer/TestPackagedEmojis.ps1 -Payload ./Installer/_staging/installed -TestExecutable ./build/Beeftext/Release/EmojiRuntimeTests.exe
           ./Installer/TestPackagedEmojis.ps1 -Payload ./artifact/Lean-Beeftext-Portable -TestExecutable ./build/Beeftext/Release/EmojiRuntimeTests.exe
 
-      - name: Verify complete unsigned payload manifests and mode isolation
+      - name: Verify unsigned staged payloads and mode isolation
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'

@@ -110,13 +110,13 @@ jobs:
             -Destination ./artifact/Lean-Beeftext-Portable -SourceCommit $commit `
             -Repository $env:GITHUB_REPOSITORY -WorkflowRun $env:GITHUB_RUN_ID
 
-      - name: Verify staged provenance, manifests, and mode isolation
+      - name: Test emoji loading in isolated installed and portable payloads
         shell: pwsh
         run: |
           ./Installer/TestPackagedEmojis.ps1 -Payload ./Installer/_staging/installed -TestExecutable ./build/Beeftext/Release/EmojiRuntimeTests.exe
           ./Installer/TestPackagedEmojis.ps1 -Payload ./artifact/Lean-Beeftext-Portable -TestExecutable ./build/Beeftext/Release/EmojiRuntimeTests.exe
 
-      - name: Verify complete payload manifests and mode isolation
+      - name: Verify staged provenance, manifests, and mode isolation
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'

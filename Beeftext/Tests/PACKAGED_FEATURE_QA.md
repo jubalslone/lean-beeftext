@@ -15,6 +15,12 @@ For emoji acceptance, physically verify `emojis\emojis.json` in both distributio
 There must be no "Could not find the emoji list file" warning when loading it.
 Current delimiters (`|`) and opt-in defaults are unchanged.
 
+Staging exports `HEAD:emojis.json` from the pinned emojilib submodule as binary
+Git blob bytes, avoiding Windows checkout newline conversion, and compares the
+staged blob identity. The expected current asset is 256,089 bytes with SHA-256
+`7ce5c17aed2f834a2eb6eab408eae2ed7b7115425512450412d298d8e45cd381`.
+This is an audit record, not a hard-coded substitute for JSON validation.
+
 Release builds resolve emoji data only beside the executable. Debug retains the
 existing source-checkout fallback for developer workflows. CMake's
 `EmojiRuntimeTests` is a test executable, never a distributed app or helper.

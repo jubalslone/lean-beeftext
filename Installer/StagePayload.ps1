@@ -86,10 +86,33 @@ $emojiSource = Join-Path $repositoryRoot 'Submodules/emojilib/emojis.json'
 $emojiDirectory = Join-Path $Destination 'emojis'
 New-Item -ItemType Directory -Path $emojiDirectory -Force | Out-Null
 $emojiDestination = Join-Path $emojiDirectory 'emojis.json'
-Copy-Item -LiteralPath $emojiSource -Destination $emojiDestination
+# Export the pinned blob without Git's platform checkout line-ending conversion.
+# Binary stdout avoids PowerShell text decoding/re-encoding (including BOMs).
+$emojiRepository = Split-Path -Parent $emojiSource
+$gitStart = [Diagnostics.ProcessStartInfo]::new()
+$gitStart.FileName = 'git'
+$gitStart.UseShellExecute = $false
+$gitStart.RedirectStandardOutput = $true
+$gitStart.RedirectStandardError = $true
+foreach ($argument in @('-C', $emojiRepository, 'cat-file', 'blob', 'HEAD:emojis.json')) {
+	$gitStart.ArgumentList.Add($argument)
+}
+$gitProcess = [Diagnostics.Process]::Start($gitStart)
+try {
+	$destinationStream = [IO.File]::Create($emojiDestination)
+	try { $gitProcess.StandardOutput.BaseStream.CopyTo($destinationStream) }
+	finally { $destinationStream.Dispose() }
+	$gitError = $gitProcess.StandardError.ReadToEnd()
+	$gitProcess.WaitForExit()
+	if ($gitProcess.ExitCode -ne 0) { throw "Could not export pinned emoji data: $gitError" }
+}
+finally { $gitProcess.Dispose() }
 & "$PSScriptRoot/TestEmojiRuntimeData.ps1" -Path $emojiDestination
-if ((Get-FileHash -LiteralPath $emojiSource).Hash -cne (Get-FileHash -LiteralPath $emojiDestination).Hash) {
-	throw 'Packaged emoji data differs from the pinned emojilib source.'
+$emojiBlob = (& git -C $emojiRepository rev-parse HEAD:emojis.json).Trim()
+if ($LASTEXITCODE -ne 0) { throw 'Could not identify the pinned emoji blob.' }
+$packagedBlob = (& git hash-object --no-filters -- $emojiDestination).Trim()
+if ($LASTEXITCODE -ne 0 -or $emojiBlob -cne $packagedBlob) {
+	throw 'Packaged emoji bytes differ from the pinned emojilib blob.'
 }
 
 foreach ($document in @(
