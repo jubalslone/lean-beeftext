@@ -101,6 +101,38 @@ Snippet:
 #{date}
 ```
 
+### Custom date and time
+
+If you want a specific date/time layout, use `dateTime`:
+
+```text
+#{dateTime:yyyy-MM-dd}
+```
+
+Only `dateTime` accepts Qt format letters. Plain `#{date}` and `#{time}` use your normal Windows locale format and do not accept custom patterns.
+
+A default-like U.S. date/time pattern is:
+
+```text
+#{dateTime:dddd, MMMM d, yyyy h:mm:ss AP t}
+```
+
+For example:
+
+```text
+Monday, September 21, 2026 11:30:00 PM CDT
+```
+
+A few simpler examples:
+
+- `#{dateTime:M/d/yyyy}` → `9/21/2026`
+- `#{dateTime:yyyy-MM-dd}` → `2026-09-21`
+- `#{dateTime:MMM d, yyyy 'at' h:mm AP}` → `Sep 21, 2026 at 11:30 PM`
+
+One easy thing to mix up: uppercase `M` means **month**; lowercase `m` means **minute**.
+
+For the full pattern-letter and date-offset reference, see [Custom date/time formatting in the README](README.md#custom-date-time-formatting).
+
 ### Ask for a name when the combo runs
 
 Keyword:
