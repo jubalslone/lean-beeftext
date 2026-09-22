@@ -120,14 +120,17 @@ A default-like U.S. date/time pattern is:
 For example:
 
 ```text
-Monday, September 21, 2026 11:30:00 PM CDT
+Tuesday, September 1, 2026 11:30:00 PM CDT
 ```
 
 A few simpler examples:
 
-- `#{dateTime:M/d/yyyy}` → `9/21/2026`
-- `#{dateTime:yyyy-MM-dd}` → `2026-09-21`
-- `#{dateTime:MMM d, yyyy 'at' h:mm AP}` → `Sep 21, 2026 at 11:30 PM`
+- `#{dateTime:M/d/yyyy}` → `9/1/2026`
+- `#{dateTime:MM/dd/yyyy}` → `09/01/2026`
+- `#{dateTime:MMMM d, yyyy}` → `September 1, 2026`
+- `#{dateTime:ddd, MMMM d, yyyy}` → `Tue, September 1, 2026`
+- `#{dateTime:dddd, MMMM d, yyyy}` → `Tuesday, September 1, 2026`
+- `#{dateTime:yyyy-MM-dd}` → `2026-09-01`
 
 One easy thing to mix up: uppercase `M` means **month**; lowercase `m` means **minute**.
 
