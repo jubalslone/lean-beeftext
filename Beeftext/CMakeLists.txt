@@ -219,6 +219,16 @@ target_link_libraries(Beeftext Ole32)
 target_link_libraries(Beeftext Rstrtmgr)
 
 if(BUILD_TESTING)
+	# Exercise the production delegate/UI/theme together, with an alternate test
+	# entry point that never starts hooks, autostart, migration, or substitution.
+	get_target_property(pickerTestSources Beeftext SOURCES)
+	list(REMOVE_ITEM pickerTestSources main.cpp Beeftext.rc)
+	add_executable(PickerRenderingTests Tests/PickerRenderingTests.cpp ${pickerTestSources})
+	target_precompile_headers(PickerRenderingTests PRIVATE stdafx.h)
+	target_link_libraries(PickerRenderingTests Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network XMiLib Winmm Shell32 Ole32 Rstrtmgr)
+	add_test(NAME PickerRenderingLight COMMAND PickerRenderingTests light)
+	add_test(NAME PickerRenderingDark COMMAND PickerRenderingTests dark)
+
    add_executable(LeanSecurityModelTests
       Tests/TLFSafeBuildTests.cpp
       TLFSafeBuild.cpp

@@ -86,6 +86,16 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Verify build did not rewrite tracked source
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: Quick-Search-rendering-evidence
+          path: |
+            build/Beeftext/picker-evidence/
+            test-output.log
+          if-no-files-found: warn
+
+      - name: Verify build did not rewrite tracked source
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
