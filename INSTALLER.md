@@ -66,7 +66,7 @@ The PortableApps beacon/layout remains supported as before. Portable mode is sel
 Inno Setup 7.1.0 is the pinned compiler for CI. A future already-elevated updater or administrative process may invoke the same installer with:
 
 ```text
-Lean-Beeftext-Setup-1.0.1.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+Lean-Beeftext-Setup-1.0.0.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
 ```
 
 Those switches do not bypass UAC. Same-version reinstall is permitted; downgrade is refused. The stable AppId enables in-place upgrades without uninstalling first. Inno Restart Manager support requests a normal application close for an installed Lean instance and is configured not to force-close or unexpectedly relaunch Lean Beeftext. XMiLib implements Lean's single-instance key with `QSharedMemory`, not a compatible Windows named mutex, so Inno `AppMutex` is not used. Lean's uninstaller instead queries the built-in Windows process inventory and compares the full running executable path to the exact installed `LeanBeeftext.exe`; interactive uninstall offers Retry/Cancel until that process exits, while silent uninstall aborts deterministically if the exact process is running or its state cannot be checked safely. Setup cannot reliably discover an arbitrary portable executable path before staging, so users should close portable Lean Beeftext before installing; no process helper, service, forced termination, or third-party plugin is added for either case.

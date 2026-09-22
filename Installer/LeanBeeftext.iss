@@ -1,5 +1,5 @@
 #define MyAppName "Lean Beeftext"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.0.0"
 #define MyAppPublisher "Jubal Slone"
 #define MyAppURL "https://github.com/jubalslone/lean-beeftext"
 #define MyAppExeName "LeanBeeftext.exe"
@@ -21,7 +21,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 OutputDir=_output
-OutputBaseFilename=Lean-Beeftext-Setup-1.0.1
+OutputBaseFilename=Lean-Beeftext-Setup-1.0.0
 SetupIconFile=..\Beeftext\Resources\Icons\LeanBeeftextApp.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/ultra64
@@ -35,7 +35,7 @@ ChangesAssociations=no
 ChangesEnvironment=no
 UsePreviousAppDir=yes
 SetupLogging=yes
-VersionInfoVersion=1.0.1.0
+VersionInfoVersion=1.0.0.0
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppName} installer
 VersionInfoProductName={#MyAppName}
