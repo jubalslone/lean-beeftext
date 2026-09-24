@@ -79,6 +79,42 @@ foreach ($runtimeDll in @('MSVCP140.dll', 'VCRUNTIME140.dll', 'VCRUNTIME140_1.dl
 }
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
+
+# This is required runtime data, not a developer/source-tree convenience.
+$emojiSource = Join-Path $repositoryRoot 'Submodules/emojilib/emojis.json'
+& "$PSScriptRoot/TestEmojiRuntimeData.ps1" -Path $emojiSource
+$emojiDirectory = Join-Path $Destination 'emojis'
+New-Item -ItemType Directory -Path $emojiDirectory -Force | Out-Null
+$emojiDestination = Join-Path $emojiDirectory 'emojis.json'
+# Export the pinned blob without Git's platform checkout line-ending conversion.
+# Binary stdout avoids PowerShell text decoding/re-encoding (including BOMs).
+$emojiRepository = Split-Path -Parent $emojiSource
+$gitStart = [Diagnostics.ProcessStartInfo]::new()
+$gitStart.FileName = 'git'
+$gitStart.UseShellExecute = $false
+$gitStart.RedirectStandardOutput = $true
+$gitStart.RedirectStandardError = $true
+foreach ($argument in @('-C', $emojiRepository, 'cat-file', 'blob', 'HEAD:emojis.json')) {
+	$gitStart.ArgumentList.Add($argument)
+}
+$gitProcess = [Diagnostics.Process]::Start($gitStart)
+try {
+	$destinationStream = [IO.File]::Create($emojiDestination)
+	try { $gitProcess.StandardOutput.BaseStream.CopyTo($destinationStream) }
+	finally { $destinationStream.Dispose() }
+	$gitError = $gitProcess.StandardError.ReadToEnd()
+	$gitProcess.WaitForExit()
+	if ($gitProcess.ExitCode -ne 0) { throw "Could not export pinned emoji data: $gitError" }
+}
+finally { $gitProcess.Dispose() }
+& "$PSScriptRoot/TestEmojiRuntimeData.ps1" -Path $emojiDestination
+$emojiBlob = (& git -C $emojiRepository rev-parse HEAD:emojis.json).Trim()
+if ($LASTEXITCODE -ne 0) { throw 'Could not identify the pinned emoji blob.' }
+$packagedBlob = (& git hash-object --no-filters -- $emojiDestination).Trim()
+if ($LASTEXITCODE -ne 0 -or $emojiBlob -cne $packagedBlob) {
+	throw 'Packaged emoji bytes differ from the pinned emojilib blob.'
+}
+
 foreach ($document in @(
 	'LICENSE',
 	'LICENSE.GPL-3.0.txt',
