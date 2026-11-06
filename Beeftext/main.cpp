@@ -14,7 +14,6 @@
 #include "BeeftextConstants.h"
 #include "BeeftextGlobals.h"
 #include "Emoji/EmojiManager.h"
-#include "Update/UpdateManager.h"
 #include "I18nManager.h"
 #include "Preferences/PreferencesManager.h"
 #include "Picker/PickerWindow.h"
@@ -32,21 +31,7 @@ using namespace xmilib;
 void ensureDirExists(QString const &path); ///< Make sure a folder exists.
 void ensureAppDataDirsExist(); ///< Make sure the application data folder exists
 void ensureMainWindowHasAHandle(MainWindow &mainWindow); ///< Ensure that the main window has a Win32 handle
-void removeFileMarkedForDeletion(); ///< Remove the software update file that may have been marker for deletion
 void setupPickerWindowShortcut(); ///< Setup the combo picker shortcut
-
-
-//****************************************************************************************************************************************************
-/// \brief play a sound file.
-///
-/// \param[in] path The path of the sound file.
-//****************************************************************************************************************************************************
-void playSound(QString const &path) {
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly))
-        return;
-    QByteArray result = file.readAll();
-}
 
 
 //****************************************************************************************************************************************************
@@ -56,7 +41,6 @@ void playSound(QString const &path) {
 /// \param[in] argv The list of command line arguments
 //****************************************************************************************************************************************************
 int main(int argc, char *argv[]) {
-    qRegisterMetaType<SpLatestVersionInfo>(); // required to use SpLatestVersionInfo in a queued signal/slot connection
     qRegisterMetaType<SpGroup>(); // required to use SpGroup in a queued signal/slot connection
     QString const unhandledException = "Unhandled Exception";
     DebugLog &debugLog = globals::debugLog();
@@ -91,8 +75,6 @@ int main(int argc, char *argv[]) {
         debugLog.addInfo(QString("Build info: %1").arg(globals::getBuildInfo()));
         applyAutostartParameters();
         LegacyMigrationManager::runIfNeeded();
-        if constexpr (!constants::kRestrictedBuild)
-            removeFileMarkedForDeletion();
 
         // if necessary warn about deprecated rich text support and offer an exit option.
         if (prefs.alreadyLaunched() && (!prefs.alreadyConvertedRichTextCombos()) &&
@@ -103,7 +85,6 @@ int main(int argc, char *argv[]) {
 
 
         ComboManager &comboManager = ComboManager::instance(); // we make sure the combo manager singleton is instanciated
-        (void) UpdateManager::instance(); // we make sure the update manager singleton is instanciated
         EmojiManager &emojiManager = EmojiManager::instance();
         if (prefs.emojiShortcodesEnabled())
             emojiManager.loadEmojis();
@@ -177,31 +158,6 @@ void ensureMainWindowHasAHandle(MainWindow &mainWindow) {
     mainWindow.show();
     mainWindow.hide();
     mainWindow.setWindowOpacity(1);
-}
-
-
-//****************************************************************************************************************************************************
-// 
-//****************************************************************************************************************************************************
-void removeFileMarkedForDeletion() {
-    PreferencesManager const &prefs = PreferencesManager::instance();
-    DebugLog &debugLog = globals::debugLog();
-    QString const path = prefs.fileMarkedForDeletionOnStartup();
-    if (path.isEmpty())
-        return;
-    prefs.clearFileMarkedForDeletionOnStartup();
-    QFile file(path);
-    QString const nativePath = QDir::toNativeSeparators(path);
-    if (!file.exists()) {
-        debugLog.addWarning(QString("The following file was marked for deletion but does not exist: %1")
-            .arg(nativePath));
-        return;
-    }
-    if (file.remove())
-        debugLog.addInfo(QString("The following file was successfully removed: %1").arg(nativePath));
-    else
-        debugLog.addWarning(QString("The following file was marked for deletion but could not be removed: %1")
-            .arg(nativePath));
 }
 
 

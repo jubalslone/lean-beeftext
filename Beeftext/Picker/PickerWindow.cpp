@@ -12,7 +12,6 @@
 #include "PickerItemDelegate.h"
 #include "Emoji/EmojiManager.h"
 #include "Combo/ComboManager.h"
-#include "Clipboard/ClipboardManager.h"
 #include "Preferences/PreferencesManager.h"
 #include "BeeftextUtils.h"
 #include "BeeftextConstants.h"
@@ -347,7 +346,7 @@ void PickerWindow::copyItemAtIndexToClipboardAndClose(QModelIndex const &index) 
     if (text.isNull())
         return;
     this->close();
-    ClipboardManager::instance().setText(text);
+    QGuiApplication::clipboard()->setText(text);
 }
 
 

@@ -58,7 +58,6 @@ private slots:
     void onGroupMoved(SpGroup const &group, qint32 newIndex) const; ///< Slot for the moving of a group in the list
     void onContextMenuRequested() const; ///< Slot for the context menu
     void onMenuAboutToShow() const; ///< Slot triggered when the menu is about to be displayed
-    void onBackupRestored() const; ///< Slot triggered when a backup is restored
 
 private: // data members
     Ui::GroupListWidget ui_; ///< The GUI for the dialog

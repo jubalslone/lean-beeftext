@@ -8,7 +8,7 @@ Lean Beeftext is based on [Beeftext 16.0](https://github.com/xmichelo/Beeftext),
 
 ## Qt 6
 
-The Windows package is built with Qt 6.8 and ships the Qt libraries and plugins selected by `windeployqt`. The modules used directly by Lean Beeftext include Qt Core, GUI, Widgets, Network, and SVG.
+The Windows package is built with Qt 6.8 and ships the Qt libraries and plugins selected by `windeployqt`. The modules used directly by Lean Beeftext are Qt Core, GUI, and Widgets; Lean Beeftext does not link Qt Network.
 
 Qt is Copyright © The Qt Company Ltd. and other contributors. The open-source Qt 6 libraries are available under the GNU Lesser General Public License version 3 and GNU General Public License version 3, with commercial licensing also available from The Qt Company. Lean Beeftext uses the LGPLv3 option for the dynamically linked Qt libraries. See:
 
@@ -38,7 +38,7 @@ The portable Windows package includes Microsoft Visual C++ runtime DLLs selected
 
 ## OpenSSL Status
 
-The current Windows portable workflow does not deliberately package OpenSSL DLLs; Qt networking uses the Windows platform TLS backend for the disabled update path. If a future deployment includes OpenSSL, its exact version and matching license must be audited and added here before distribution. OpenSSL 3.x is licensed under Apache License 2.0, while older releases use earlier OpenSSL/SSLeay terms. See <https://openssl-library.org/source/license/>.
+Lean Beeftext has no network code and does not link Qt Network, so no OpenSSL or TLS component is packaged. If a future deployment includes OpenSSL, its exact version and matching license must be audited and added here before distribution. OpenSSL 3.x is licensed under Apache License 2.0, while older releases use earlier OpenSSL/SSLeay terms. See <https://openssl-library.org/source/license/>.
 
 ## Packaging Audit Note
 

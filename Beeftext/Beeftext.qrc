@@ -10,5 +10,6 @@
         <file>Resources/Notification.wav</file>
         <file>Resources/ArrowDown.png</file>
         <file>Resources/StyleNoCustom.qss</file>
+        <file alias="Resources/emojis.json">../Submodules/emojilib/emojis.json</file>
     </qresource>
 </RCC>

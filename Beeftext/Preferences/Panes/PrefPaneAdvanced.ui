@@ -27,100 +27,29 @@
     <number>0</number>
    </property>
    <item>
-    <layout class="QHBoxLayout" name="layout1">
+    <layout class="QHBoxLayout" name="layoutComboListFolder">
      <item>
-      <widget class="QLabel" name="labelDelayBetweenKeystrokes">
+      <widget class="QLabel" name="labelComboListFolder">
        <property name="text">
-        <string>Delay between simulated keystrokes</string>
+        <string>Combo list folder</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="spinDelayBetweenKeystrokes">
-       <property name="suffix">
-        <string>ms</string>
+      <widget class="QLineEdit" name="editComboListFolder">
+       <property name="readOnly">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
      <item>
-      <spacer name="spacer1">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+      <widget class="QPushButton" name="buttonOpenComboListFolder">
+       <property name="text">
+        <string>O&amp;pen</string>
        </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>0</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
+      </widget>
      </item>
     </layout>
-   </item>
-   <item>
-    <widget class="QFrame" name="frameComboListFolder">
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>0</height>
-      </size>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="labelComboListFolder">
-        <property name="text">
-         <string>Combo list folder</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="editComboListFolder">
-        <property name="readOnly">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="buttonChangeComboListFolder">
-        <property name="text">
-         <string>&amp;Change</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="buttonOpenComboListFolder">
-        <property name="text">
-         <string>O&amp;pen</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="buttonResetComboListFolder">
-        <property name="text">
-         <string>D&amp;efault</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
    </item>
    <item>
     <widget class="QCheckBox" name="checkWriteDebugLogFile">
@@ -130,60 +59,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QCheckBox" name="checkUseLegacyCopyPaste">
-     <property name="text">
-      <string>Use legacy copy/paste</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QCheckBox" name="checkRestoreClipboardAfterSubstitution">
-     <property name="text">
-      <string>Restore clipboard after combo substitution</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QCheckBox" name="checkUseShiftInsertForPasting">
-     <property name="text">
-      <string>Use Shift+Insert for pasting</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="layout2">
-     <item>
-      <widget class="QCheckBox" name="checkUseCustomPowershellVersion">
-       <property name="text">
-        <string>Use custom PowerShell version</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="editCustomPowerShellPath">
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="buttonChangeCustomPowershellVersion">
-       <property name="text">
-        <string>&amp;Change</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_6">
-     <item>
-      <widget class="QPushButton" name="buttonSensitiveApplications">
-       <property name="text">
-        <string>Sensitive Applications</string>
-       </property>
-      </widget>
-     </item>
+    <layout class="QHBoxLayout" name="layoutExcludedApplications">
      <item>
       <widget class="QPushButton" name="buttonExcludedApplications">
        <property name="text">
@@ -192,7 +68,7 @@
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer_7">
+      <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -208,6 +84,19 @@
       </spacer>
      </item>
     </layout>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>0</height>
+      </size>
+     </property>
+    </spacer>
    </item>
   </layout>
  </widget>

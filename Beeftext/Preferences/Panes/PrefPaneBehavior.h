@@ -13,7 +13,6 @@
 
 #include "PrefPane.h"
 #include "Preferences/PreferencesManager.h"
-#include "Update/UpdateManager.h"
 #include "ui_PrefPaneBehavior.h"
 
 
@@ -33,12 +32,6 @@ public: // member functions
 
 private slots:
     void updateGui() const; ///< Update the GUI for the pane.
-    void onUpdateIsAvailable(SpLatestVersionInfo const &latestVersionInfo); ///< Slot for the availability of an update
-    void onNoUpdateIsAvailable(); ///< Slot for the lack of availability of an update
-    void onUpdateCheckStarted() const; ///< Slot for the starting of an update check
-    void onUpdateCheckFinished() const; ///< Slot for the finishing of an update check
-    void onUpdateCheckFailed(); ///< Slot update check failure
-    void onCheckAutoCheckForUpdates(bool checked) const; ///< Slot for the 'Auto check for updated' checkbox.
     void onCheckAutoStart(bool checked) const; ///< Slot for the 'Auto start at login' checkbox.
     void onAllowRealLineBreaksChanged(bool checked) const; ///< Slot for the restricted multiline preference.
     void onCheckPlaySoundOnCombo(bool checked) const; ///< Slot for the  'Play sound on combo' checkbox.
@@ -51,13 +44,11 @@ private slots:
 
 private: // member functions
     void changeEvent(QEvent *event) override; ///< Change event handler.
-    void setUpdateCheckStatus(QString const &status); ///< Set the update check status label message (this is cleared after a few seconds)
     bool validateInput() override; ///< Validate the user input.
 
 private: // data members
     Ui::PrefPaneBehavior ui_ {}; ///< The GUI for the pane.
     PreferencesManager &prefs_; ///< The preferences manager.
-    QTimer updateCheckStatusTimer_; ///< The timer for clearing the update check status label
 
 };
 

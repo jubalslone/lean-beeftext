@@ -47,7 +47,6 @@ GroupListWidget::GroupListWidget(QWidget *parent)
         throw xmilib::Exception("The group list selection model is null");
     connect(selectionModel, &QItemSelectionModel::selectionChanged, this, &GroupListWidget::onSelectionChanged);
     connect(&groups, &GroupList::groupMoved, this, &GroupListWidget::onGroupMoved);
-    connect(&ComboManager::instance(), &ComboManager::backupWasRestored, this, &GroupListWidget::onBackupRestored);
     connect(new QShortcut(QKeySequence("Ctrl+Shift+A"), this), &QShortcut::activated, this, &GroupListWidget::selectAllCombosEntry);
     connect(ui_.listGroup, &QListView::doubleClicked, this, &GroupListWidget::onActionEditGroup);
 
@@ -401,14 +400,6 @@ void GroupListWidget::onMenuAboutToShow() const {
     if (!menu)
         throw xmilib::Exception(QString("Internal error: %1(): could not retrieve context menu.").arg(__FUNCTION__));
     this->updateActionsAvailabilityAndNames();
-}
-
-
-//****************************************************************************************************************************************************
-// 
-//****************************************************************************************************************************************************
-void GroupListWidget::onBackupRestored() const {
-    this->selectAllCombosEntry();
 }
 
 

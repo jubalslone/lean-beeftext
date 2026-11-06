@@ -13,10 +13,8 @@
 #include "Dialogs/ShortcutDialog.h"
 #include "ProcessListManager.h"
 #include "InputManager.h"
-#include "KeyboardMapper.h"
 #include "Preferences/PreferencesManager.h"
 #include "BeeftextGlobals.h"
-#include "Clipboard/ClipboardManagerDefault.h"
 #include <Psapi.h>
 #include <XMiLib/SystemUtils.h>
 #include <XMiLib/Exception.h>
@@ -61,43 +59,6 @@ bool isInPortableModeInternal() {
     QDir const appDir(QCoreApplication::applicationDirPath());
     return QFileInfo(appDir.absoluteFilePath(kPortableModeBeaconFileName)).exists() ||
            QFileInfo(appDir.absoluteFilePath(kPortableAppsModeBeaconFileName)).exists();
-}
-
-
-//****************************************************************************************************************************************************
-/// \brief Retrieve the list of currently pressed modifier key and synthesize a key release event for each of them
-///
-/// \return The list of modifier keys that are pressed
-//****************************************************************************************************************************************************
-QList<quint16> backupAndReleaseModifierKeys() {
-    QList<quint16> result;
-    for (quint16 const key: modifierKeys)
-        if (GetAsyncKeyState(key) < 0) {
-            result.append(key);
-            synthesizeKeyUp(key);
-        }
-    return result;
-}
-
-
-//****************************************************************************************************************************************************
-/// \brief Restore the specified modifier keys state by generating a key press event for each of them
-///
-/// \param[in] keys The list of modifiers key to restore by generating a key press event
-//****************************************************************************************************************************************************
-void restoreModifierKeys(QList<quint16> const &keys) {
-    for (quint16 const key: keys)
-        synthesizeKeyDown(key);
-}
-
-
-//****************************************************************************************************************************************************
-/// \brief Wait between keystroke, for an amount time defined in the preferences.
-//****************************************************************************************************************************************************
-void waitBetweenKeystrokes() {
-    qint32 const delayMs = PreferencesManager::instance().delayBetweenKeystrokesMs();
-    if (delayMs > 0)
-        qApp->thread()->msleep(static_cast<quint32>(delayMs));
 }
 
 
@@ -148,6 +109,7 @@ void appendVirtualKeyEvent(std::vector<INPUT> &events, WORD virtualKey, bool pre
     event.ki.wVk = virtualKey;
     event.ki.wScan = static_cast<WORD>(MapVirtualKey(virtualKey, MAPVK_VK_TO_VSC));
     event.ki.dwFlags = pressed ? 0 : KEYEVENTF_KEYUP;
+    event.ki.dwExtraInfo = kLeanInjectedInputMarker;
     if (isExtendedKey(virtualKey))
         event.ki.dwFlags |= KEYEVENTF_EXTENDEDKEY;
     events.push_back(event);
@@ -165,6 +127,7 @@ void appendUnicodeCodeUnit(std::vector<INPUT> &events, QChar character) {
     keyDown.type = INPUT_KEYBOARD;
     keyDown.ki.wScan = character.unicode();
     keyDown.ki.dwFlags = KEYEVENTF_UNICODE;
+    keyDown.ki.dwExtraInfo = kLeanInjectedInputMarker;
 
     INPUT keyUp = keyDown;
     keyUp.ki.dwFlags |= KEYEVENTF_KEYUP;
@@ -245,176 +208,6 @@ QString htmlToPlainText(QString const &snippet) {
 
 
 //****************************************************************************************************************************************************
-/// \brief erase characters by
-///
-/// \note This function does not disable the keyboard hook before operating.
-///
-/// \param[in] count The number of characters to erase.
-//****************************************************************************************************************************************************
-void eraseChars(qint32 count) {
-    QList<quint16> const pressedModifiers = backupAndReleaseModifierKeys();
-    synthesizeBackspaces(count);
-    restoreModifierKeys(pressedModifiers);
-}
-
-
-//****************************************************************************************************************************************************
-/// \brief Insert text by pasting it.
-///
-/// \note This function does not disable the keyboard hook before operating.
-///
-/// \param[in] text The text.
-//****************************************************************************************************************************************************
-void insertTextByPasting(QString const &text) {
-    // we use the clipboard to and copy/paste the snippet
-    ClipboardManager &clipboardManager = ClipboardManager::instance();
-    bool const restoreClipboard = PreferencesManager::instance().restoreClipboardAfterSubstitution();
-    if (restoreClipboard)
-        clipboardManager.backupClipboard();
-#ifdef Q_OS_WINDOWS
-    QString txt = ensureStringHasCRLFLineEndings(text);
-#else
-    QString txt = text;
-#endif
-    clipboardManager.setText(txt);
-    QList<quint16> const pressedModifiers = backupAndReleaseModifierKeys(); ///< We artificially depress the current modifier keys
-    if (PreferencesManager::instance().useShiftInsertForPasting()) {
-        synthesizeKeyDown(VK_LSHIFT);
-        synthesizeKeyDownAndUp(VK_INSERT);
-        synthesizeKeyUp(VK_LSHIFT);
-    } else {
-        synthesizeKeyDown(VK_LCONTROL);
-        synthesizeKeyDownAndUp('V');
-        synthesizeKeyUp(VK_LCONTROL);
-    }
-    restoreModifierKeys(pressedModifiers);
-
-    // We need to delay clipboard restoration to avoid unexpected behaviours.
-    QTimer::singleShot(1000, &clipboardManager, restoreClipboard ? &ClipboardManager::restoreClipboard : &ClipboardManager::clearClipboard);
-}
-
-
-//****************************************************************************************************************************************************
-/// \brief Insert text by pasting it.
-///
-/// \note This function does not disable the keyboard hook before operating.
-///
-/// \param[in] text The text.
-//****************************************************************************************************************************************************
-void insertTextByTyping(QString const &text) {
-    QList<quint16> pressedModifiers;
-    // we simulate the typing of the snippet text
-    for (QChar c: text) {
-        if (c == QChar::LineFeed)
-            // synthesizeUnicode key down does not handle line feed properly (the problem actually comes from Windows API's SendInput())
-        {
-            pressedModifiers = backupAndReleaseModifierKeys();
-            synthesizeKeyDownAndUp(VK_RETURN);
-            restoreModifierKeys(pressedModifiers);
-            waitBetweenKeystrokes();
-        } else {
-            pressedModifiers = backupAndReleaseModifierKeys();
-            synthesizeUnicodeKeyDownAndUp(c.unicode());
-            restoreModifierKeys(pressedModifiers);
-            waitBetweenKeystrokes();
-        }
-    }
-
-}
-
-
-//****************************************************************************************************************************************************
-/// \param[in] str The string.
-/// \return A copy of the string with CR/LF line endings.
-//****************************************************************************************************************************************************
-QString ensureStringHasCRLFLineEndings(QString const &str) {
-    QString result;
-    QChar const cr('\r');
-    QChar const lf('\n');
-    QChar prev(0);
-    for (QChar c: str) {
-        if ((c == lf) && (prev != cr))
-            result += cr;
-        prev = c;
-        result += c;
-    }
-    return result;
-}
-
-
-//****************************************************************************************************************************************************
-/// \note This function does not disable the keyboard hook before operating.
-///
-/// \param[in] text The text
-//****************************************************************************************************************************************************
-void insertText(QString const &text) {
-    if constexpr (constants::kRestrictedBuild) {
-        performRestrictedTextInput(0, text, 0,
-            PreferencesManager::instance().allowRealLineBreaksInSnippets());
-        return;
-    }
-
-    QList<quint16> pressedModifiers;
-    if (!globals::sensitiveApplications().filter(getActiveExecutableFileName()))
-        insertTextByPasting(text);
-    else
-        insertTextByTyping(text);
-}
-
-
-//****************************************************************************************************************************************************
-/// \param[in] shortcut The shortcut.
-//****************************************************************************************************************************************************
-void renderShortcut(SpShortcut const &shortcut) {
-    if (!shortcut) {
-        globals::debugLog().addWarning("Tried to render a null shortcut.");
-        return;
-    }
-    if (!shortcut->isValid()) {
-        globals::debugLog().addWarning("Tried to render a null shortcut.");
-        return;
-    }
-    QList<quint16> const pressedModifiers = backupAndReleaseModifierKeys(); ///< We artificially depress the current modifier keys
-    Qt::KeyboardModifiers const mods = shortcut->keyboardModifiers();
-    if (mods & Qt::ControlModifier)
-        synthesizeKeyDown(VK_CONTROL);
-    if (mods & Qt::AltModifier)
-        synthesizeKeyDown(VK_MENU);
-    if (mods & Qt::MetaModifier)
-        synthesizeKeyDown(VK_LWIN);
-    if (mods & Qt::ShiftModifier)
-        synthesizeKeyDown(VK_SHIFT);
-
-    synthesizeKeyDownAndUp(qint16(KeyboardMapper::instance().qtKeyToVirtualKeyCode(shortcut->key())));
-
-    if (mods & Qt::ControlModifier)
-        synthesizeKeyUp(VK_CONTROL);
-    if (mods & Qt::AltModifier)
-        synthesizeKeyUp(VK_MENU);
-    if (mods & Qt::MetaModifier)
-        synthesizeKeyUp(VK_LWIN);
-    if (mods & Qt::ShiftModifier)
-        synthesizeKeyUp(VK_SHIFT);
-    restoreModifierKeys(pressedModifiers);
-}
-
-
-//****************************************************************************************************************************************************
-/// \note This function does not disable the keyboard hook before operating.
-///
-/// \param[in] count The number of characters to move by
-//****************************************************************************************************************************************************
-void moveCursorLeft(qint32 count) {
-    if (count < 1)
-        return;
-    QList<quint16> const pressedModifiers = backupAndReleaseModifierKeys(); ///< We artificially depress the current modifier keys
-    for (qint32 i = 0; i < count; ++i)
-        synthesizeKeyDownAndUp(VK_LEFT);
-    restoreModifierKeys(pressedModifiers);
-}
-
-
-//****************************************************************************************************************************************************
 /// Perform deletion, text insertion, and bounded cursor movement as one serial
 /// SendInput batch. Restricted text is sanitized again here so every caller,
 /// including emoji insertion, receives the same fail-closed behavior. The only
@@ -427,7 +220,7 @@ void performRestrictedTextInput(qint32 eraseCount, QString const &text, qint32 c
 
     qint32 const safeEraseCount = qMax<qint32>(eraseCount, 0);
     qint32 const safeCursorLeftCount = qMax<qint32>(cursorLeftCount, 0);
-    QString const safeText = tlf::sanitizeText(text, allowRealLineBreaks);
+    QString const safeText = restricted::sanitizeText(text, allowRealLineBreaks);
     quint64 const eventCount64 = 2ULL * (static_cast<quint64>(safeEraseCount)
         + static_cast<quint64>(safeText.size()) + static_cast<quint64>(safeCursorLeftCount));
     if (eventCount64 > kMaxRestrictedInputEventCount)
@@ -487,21 +280,12 @@ bool performTextSubstitution(qint32 charCount, QString const &newText, qint32 cu
         bool const triggersOnSpace = prefs.useAutomaticSubstitution() && prefs.comboTriggersOnSpace();
         QString const text = newText + (triggersOnSpace && prefs.keepFinalSpaceCharacter() && (!triggeredByPicker)
                                         ? " " : QString());
-        if constexpr (constants::kRestrictedBuild) {
-            bool const allowRealLineBreaks = prefs.allowRealLineBreaksInSnippets();
-            qint32 const eraseCount = triggeredByPicker ? 0
-                : qMax<qint32>(charCount + (triggersOnSpace ? 1 : 0), 0);
-            qint32 const cursorLeftCount = cursorPos < 0 ? 0
-                : qMax<qint32>(0, printableCharacterCount(tlf::sanitizeText(text, allowRealLineBreaks)) - cursorPos);
-            performRestrictedTextInput(eraseCount, text, cursorLeftCount, allowRealLineBreaks);
-        } else {
-            if (!triggeredByPicker)
-                eraseChars(qMax<qint32>(charCount + (triggersOnSpace ? 1 : 0), 0));
-            insertText(text);
-            // position the cursor if needed by typing the right amount of left key strokes
-            if (cursorPos >= 0)
-                moveCursorLeft(qMax<qint32>(0, printableCharacterCount(text) - cursorPos));
-        }
+        bool const allowRealLineBreaks = prefs.allowRealLineBreaksInSnippets();
+        qint32 const eraseCount = triggeredByPicker ? 0
+            : qMax<qint32>(charCount + (triggersOnSpace ? 1 : 0), 0);
+        qint32 const cursorLeftCount = cursorPos < 0 ? 0
+            : qMax<qint32>(0, printableCharacterCount(restricted::sanitizeText(text, allowRealLineBreaks)) - cursorPos);
+        performRestrictedTextInput(eraseCount, text, cursorLeftCount, allowRealLineBreaks);
     }
     catch (Exception const &exception) {
         inputManager.setKeyboardHookEnabled(wasKeyboardHookEnabled);
@@ -563,33 +347,6 @@ qint32 printableCharacterCount(QString const &str) {
             result -= 1;
     }
     return qMax<qint32>(0, result);
-}
-
-
-//****************************************************************************************************************************************************
-/// \brief Get the MIME data for a text snippet.
-/// 
-/// \param[in] text The snippet's text.
-/// \return A pointer to heap-allocated MIME data representing the snippet. The caller is responsible for
-/// release the allocated memory.
-//****************************************************************************************************************************************************
-QMimeData *mimeDataFromText(QString const &text) {
-    QMimeData *result = new QMimeData;
-    result->setText(text);
-    return result;
-}
-
-
-//****************************************************************************************************************************************************
-/// \param[in] html The HTML content
-//****************************************************************************************************************************************************
-QMimeData *mimeDataFromHtml(QString const &html) {
-    QMimeData *result = new QMimeData;
-    // we filter the HTML through a QTextDocumentFragment as is prevent errouneous insertion of new line
-    // at the beginning and end of the snippet
-    result->setHtml(QTextDocumentFragment::fromHtml(html).toHtml());
-    result->setText(htmlToPlainText(html));
-    return result;
 }
 
 

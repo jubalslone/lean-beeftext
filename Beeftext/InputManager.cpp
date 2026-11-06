@@ -127,6 +127,8 @@ LRESULT CALLBACK InputManager::keyboardProcedure(int nCode, WPARAM wParam, LPARA
     KBDLLHOOKSTRUCT const *keyEvent = reinterpret_cast<KBDLLHOOKSTRUCT *>(lParam); // NOLINT(performance-no-int-to-ptr)
     if (!keyEvent)
         return CallNextHookEx(nullptr, nCode, wParam, lParam);
+    if ((keyEvent->flags & LLKHF_INJECTED) && (keyEvent->dwExtraInfo == kLeanInjectedInputMarker))
+        return CallNextHookEx(nullptr, nCode, wParam, lParam); // Our own synthesized output must never be re-processed as typing.
     SpShortcut const shortcut = shortcutFromWindowsKeyEvent(keyEvent);
     if (shortcut && shortcut->isValid())
         emit instance().shortcutPressed(shortcut); // note that we do not return here, as some combination (e.g. Ctrl+Alt+5 or AltGr+5) may actually lead to some text

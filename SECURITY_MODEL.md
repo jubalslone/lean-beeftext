@@ -39,17 +39,17 @@ Windows controls cannot distinguish the resulting Return from a user pressing En
 
 Cursor processing happens once, after nested combos, input, and transformations. All exact `#{cursor}` markers are removed and the last exact marker sets the final caret position. An uppercase transformation changes the marker to literal `#{CURSOR}` and cannot move the caret; lowercase and trim output works normally if an exact marker remains.
 
-Movement is enabled only when text after the last exact marker is printable ASCII, plus normalized line breaks in compatibility mode. If the suffix is unsafe or ambiguous, every exact marker stays literal and no cursor key is sent. Each normalized line break counts as one inserted position. Cursor-left events are therefore bounded to the newly inserted suffix.
+Movement is implemented as one Left-arrow event per UTF-16 code unit of the text after the last exact marker, plus normalized line breaks in compatibility mode. That count is exact for every Basic Multilingual Plane character that forms its own grapheme (Latin, accented letters, CJK, Cyrillic, punctuation). It is not predictable for surrogate pairs (emoji and other supplementary-plane characters), combining marks, variation selectors, or format characters such as the zero-width joiner, so if the suffix contains any of those, no cursor key is sent and the caret stays at the end of the inserted text. In every case the exact markers themselves are removed; `#{cursor}` is never typed into the destination. Each normalized line break counts as one inserted position. Cursor-left events are therefore bounded to the newly inserted suffix.
 
 ### Modifier and hook safety
 
-Insertion refuses to proceed while Ctrl, Alt, Shift, or Windows modifiers are held. The original keyword remains intact. A timeout prevents indefinite waiting, and error paths restore the keyboard hook. Restricted tests cover refusal, event planning, modifier release behavior, and hook restoration guards; manual QA checks for stuck modifiers.
+Insertion refuses to proceed while Ctrl, Alt, Shift, or Windows modifiers are held. The original keyword remains intact. A timeout prevents indefinite waiting, and error paths restore the keyboard hook. Every keyboard event Lean Beeftext injects is tagged in its `dwExtraInfo` field, and the low-level keyboard hook passes tagged injected events through untouched, so the application can never re-process its own output as typing even if the hook is re-enabled before Windows has finished delivering a batch. Manual QA checks for stuck modifiers.
 
 ## Installed and Portable Data Isolation
 
 Installed Lean Beeftext stores `Settings.ini`, `comboList.json`, user configuration/translations, backups, and migration recovery copies beneath the Windows Documents known folder in `Lean Beeftext`. It uses a permanent Lean-only settings identity and does not use upstream Beeftext's normal runtime namespace. Logs and last-use caches use Lean-specific LocalAppData. Live combo-list persistence uses atomic file replacement to reduce the risk of a truncated file during interruption or synchronized-folder activity.
 
-The portable package includes `Portable.bin`. Portable settings, combos, logs, and other application data live under package-local `Data`. The combo-list and custom-backup location controls are unavailable, updater cleanup cannot delete a path from old settings, and combo portability dialogs default to normal user-selected locations.
+The portable package includes `Portable.bin`. Portable settings, combos, logs, and other application data live under package-local `Data`. The combo-list location is fixed in both modes, there is no custom backup location, and combo portability dialogs default to normal user-selected locations.
 
 The public portability model is **Combos > Import Combos…** and **Combos > Export Combos…** only. Lean exports UTF-8, human-readable JSON in `Lean-Beeftext-Combos.txt` using this versioned root schema:
 
@@ -68,7 +68,7 @@ Legacy upstream Beeftext `.json` and `.csv` exports remain import-compatible. Ma
 
 ## Update Boundary
 
-The current restricted build disables automatic and manual upstream update checks, download/install code paths, updater cleanup, and custom PowerShell configuration. The Inno installer provides no network updater, service, scheduled task, or privileged helper. Its unattended switches are only a future installer execution contract and do not bypass UAC or verify downloads. Upstream changes must be reviewed and deliberately integrated into this fork.
+Lean Beeftext contains no update checker, download path, updater cleanup, clipboard insertion path, script execution path, or custom PowerShell configuration. Those upstream components are removed from the source tree rather than compiled out behind a flag, and the application does not link Qt Network. The Inno installer provides no network updater, service, scheduled task, or privileged helper. Its unattended switches are only a future installer execution contract and do not bypass UAC or verify downloads. Upstream changes must be reviewed and deliberately integrated into this fork.
 
 ## Upstream Migration Boundary
 
@@ -96,7 +96,7 @@ Routine pull-request QA artifacts are unsigned. The separately gated production 
 4. Test every Preferences pane at 100%, 125%, and 150% display scaling in system, Light, and Dark modes. Confirm native controls, focus, disabled states, and layout remain clear.
 5. In visible-`\n` mode, trigger LF, CRLF, repeated blank lines, and a trailing newline. Confirm visible `\n` output and no target action.
 6. In real-line-break mode, repeat in Word, Notepad with spellcheck/autocorrect disabled, an Outlook-style editor, a browser textarea, and a single-line/chat test field. Confirm the documented destination behavior.
-7. Test newlines before and after `#{cursor}`, repeated markers, a nested-combo marker, input, upper/lower/trim transformations, ASCII suffixes, Unicode suffix refusal, and emoji. Confirm movement remains within inserted text.
+7. Test newlines before and after `#{cursor}`, repeated markers, a nested-combo marker, input, upper/lower/trim transformations, ASCII and accented/CJK suffixes, and an emoji suffix. Confirm movement remains within inserted text, that an emoji suffix leaves the caret at the end without typing the marker, and that emoji shortcodes expand in both automatic and Quick Search modes.
 8. In both multiline modes, include `#{clipboard}`, `#{envVar:USERNAME}`, `#{powershell:C:\test.ps1}`, `#{shortcut:Win+R}`, `#{key:enter}`, and `#{delay:500}`. Confirm every token stays literal and causes no associated action or disclosure.
 9. Hold Ctrl or Alt while triggering a combo. Confirm substitution is refused, the keyword remains, and no modifier becomes stuck.
 10. Export one combo, several selected combos, and all combos. Confirm the selection counts, default `.txt` filename, readable versioned JSON, group preservation, and absence of settings. Import the Lean bundle and representative upstream `.json`/`.csv` files. Confirm malformed and unsupported inputs do not partially import.
@@ -108,4 +108,4 @@ Routine pull-request QA artifacts are unsigned. The separately gated production 
 
 ## Review Limitations
 
-Automated tests validate the parser, event-plan boundaries, import/export helpers, source-level product configuration, and packaging rules. They cannot prove how every Windows application interprets injected Unicode or Return events. Manual target-application QA remains required for each release candidate and each operational environment.
+Automated tests (`LeanSecurityModelTests`) exercise the variable allowlist, date/time evaluation against a fixed clock, text sanitizing, cursor planning, preference persistence, combo import/export, and the migration safety rules. They are behavior tests of the shared pure code and do not inspect source text. They cannot prove how every Windows application interprets injected Unicode or Return events. Manual target-application QA remains required for each release candidate and each operational environment.

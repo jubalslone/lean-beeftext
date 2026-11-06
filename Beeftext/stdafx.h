@@ -21,10 +21,9 @@
 #endif
 
 #include <QtWidgets>
-#include <QtNetwork>
 #include <QtGui>
 #include <QtCore>
-#include "TLFSafeBuild.h"
+#include "RestrictedModel.h"
 
 
 #endif // BEEFTEXT_STDAFX_H

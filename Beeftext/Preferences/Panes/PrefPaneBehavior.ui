@@ -27,31 +27,6 @@
     <number>0</number>
    </property>
    <item>
-    <layout class="QHBoxLayout" name="layout2" stretch="0,0,1">
-     <item>
-      <widget class="QCheckBox" name="checkAutoCheckForUpdates">
-       <property name="text">
-        <string>Automatically check for &amp;updates</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="buttonCheckNow">
-       <property name="text">
-        <string>&amp;Check Now</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labelUpdateCheckStatus">
-       <property name="text">
-        <string notr="true">#Update Check Status#</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
    <widget class="QCheckBox" name="checkAutoStart">
      <property name="text">
       <string>&amp;Automatically start Lean Beeftext at login</string>

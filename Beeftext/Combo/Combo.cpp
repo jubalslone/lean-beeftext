@@ -13,8 +13,6 @@
 #include "ComboManager.h"
 #include "BeeftextUtils.h"
 #include "InputManager.h"
-#include "Snippet/SnippetFragment.h"
-#include "Snippet/TextSnippetFragment.h"
 #include "Preferences/PreferencesManager.h"
 #include "BeeftextGlobals.h"
 #include "BeeftextConstants.h"
@@ -44,7 +42,6 @@ QString const kPropCreationDateTime = "creationDateTime"; ///< The JSON property
 QString const kPropLastModified = "lastModified"; ///< The JSON property name for the modification date/time, deprecated in combo list file format v3, replaced by "modificationDateTime"
 QString const kPropModificationDateTime = "modificationDateTime"; ///< The JSON property name for the modification date/time, introduced in the combo list file format v3, replacing "lastModified"
 QString const kPropEnabled = "enabled"; ///< The JSON property name for the enabled/disabled state
-QString const kCursorVariable = "#{cursor}"; ///< The cursor position variable.
 qint32 const kPlaceholderMaxLength = 50; ///< The maximum length of the placeholder name.
 QString const kPlaceholderElision = "..."; ///< The elision text for placeholder (used if placeholder name is too long.
 
@@ -385,20 +382,6 @@ bool Combo::matchesForInput(QString const &input) const {
 
 
 //****************************************************************************************************************************************************
-/// \brief compute the number of time the cursor must be shifted to the left to reach the position of the cursor
-/// variable.
-//****************************************************************************************************************************************************
-qint32 computeCursorLeftShift(QString const &str) {
-    QString s = str;
-    s.remove(QRegularExpression(QString(R"((%1)|(%2))").arg(constants::kDelayVariableRegExpStr, constants::kKeyVariableRegExpStr)));
-    qsizetype const index = s.lastIndexOf(kCursorVariable);
-    if (index < 0)
-        return -1;
-    return printableCharacterCount(s.right(s.length() - (index + kCursorVariable.length())));
-}
-
-
-//****************************************************************************************************************************************************
 /// \param[in] triggeredByPicker Was the substitution triggered by the picker window
 /// \return true if the substitution was actually performed (it could a been cancelled, for instance by the user
 /// dismissing a variable input dialog.
@@ -425,34 +408,18 @@ bool Combo::performSubstitution(bool triggeredByPicker) {
         bool const triggersOnSpace = prefs.useAutomaticSubstitution() && prefs.comboTriggersOnSpace();
         bool const keepFinalSpace = (!triggeredByPicker) && triggersOnSpace && prefs.keepFinalSpaceCharacter();
 
-        if constexpr (constants::kRestrictedBuild) {
-            if (keepFinalSpace)
-                newText += " ";
-            bool const allowRealLineBreaks = prefs.allowRealLineBreaksInSnippets();
-            tlf::RestrictedSnippet const snippet = tlf::prepareSnippet(newText, allowRealLineBreaks);
-            if (snippet.cursorSyntaxRejected)
-                globals::debugLog().addWarning("A restricted snippet contained unsafe cursor syntax; the marker was inserted literally.");
+        if (keepFinalSpace)
+            newText += " ";
+        bool const allowRealLineBreaks = prefs.allowRealLineBreaksInSnippets();
+        restricted::RestrictedSnippet const snippet = restricted::prepareSnippet(newText, allowRealLineBreaks);
+        if (snippet.cursorSyntaxRejected)
+            globals::debugLog().addWarning("The text after the last #{cursor} marker cannot be counted safely "
+                                           "(it contains emoji, combining marks, or similar); the caret was left at the end of the inserted text.");
 
-            qint32 const eraseCount = triggeredByPicker ? 0
-                : qMax<qint32>(qint32(keyword_.size()) + (triggersOnSpace ? 1 : 0), 0);
-            performRestrictedTextInput(eraseCount, snippet.text, qMax<qint32>(snippet.cursorLeftCount, 0),
-                                       allowRealLineBreaks);
-        } else {
-            qint32 const cursorLShift = computeCursorLeftShift(newText);
-            if (cursorLShift >= 0)
-                newText = newText.remove(kCursorVariable, Qt::CaseInsensitive);
-
-            if (!triggeredByPicker)
-                eraseChars(qMax<qint32>(qint32(keyword_.size()) + (triggersOnSpace ? 1 : 0), 0));
-
-            ListSpSnippetFragment fragments = splitStringIntoSnippetFragments(newText);
-            if (keepFinalSpace)
-                fragments.push_back(std::make_shared<TextSnippetFragment>(QString(" ")));
-            renderSnippetFragmentList(fragments);
-
-            if (cursorLShift > 0)
-                moveCursorLeft(cursorLShift);
-        }
+        qint32 const eraseCount = triggeredByPicker ? 0
+            : qMax<qint32>(qint32(keyword_.size()) + (triggersOnSpace ? 1 : 0), 0);
+        performRestrictedTextInput(eraseCount, snippet.text, qMax<qint32>(snippet.cursorLeftCount, 0),
+                                   allowRealLineBreaks);
     }
     catch (Exception const &exception) {
         inputManager.setKeyboardHookEnabled(wasKeyboardHookEnabled);

@@ -14,7 +14,6 @@
 #include "Shortcut.h"
 #include "Combo/MatchingMode.h"
 #include "Combo/CaseSensitivity.h"
-#include <XMiLib/VersionNumber/VersionNumber.h>
 
 
 //****************************************************************************************************************************************************
@@ -38,17 +37,12 @@ public: // member functions
     void resetWarnings() const; ///< Reset the warnings
     void setAlreadyLaunched() const; ///< Set the value for the 'First Launch' preference to false
     bool alreadyLaunched() const; ///< Test whether this is the first time the application is launched
-    void setFileMarkedForDeletionOnStartup(QString const &path) const; ///< Get the path of the file marked for deletion on startup
-    QString fileMarkedForDeletionOnStartup() const; ///< Set the path of the file marked for deletion on startup
-    void clearFileMarkedForDeletionOnStartup() const; ///< Reset the file marked for deletion on startup
     void setMainWindowGeometry(QByteArray const &array) const; ///< Set the geometry of the main window
     QByteArray mainWindowGeometry() const; ///< Get the geometry of the main window
     void setMainWindowSplitterState(QByteArray const &array) const; ///< Set the geometry of the main window splitter
     QByteArray mainWindowSplitterState() const; ///< Get the geometry of the main window splitter
     QLocale locale() const; ///< Get the locale
     void setLocale(QLocale const &locale) const; ///< Set the locale
-    void setLastUpdateCheckDateTime(QDateTime const &dateTime) const; ///< Set the last time the application checked for update
-    QDateTime lastUpdateCheckDateTime() const; ///< Get the date time of the last update check
     void setAutoStartAtLogin(bool value) const; ///< Set the value for the 'Autostart at login' preference
     bool autoStartAtLogin() const; ///< Get the value for the 'Autostart at login' preference
     void setPlaySoundOnCombo(bool value) const; ///< Set the value for the 'Play sound on combo' preference
@@ -57,8 +51,6 @@ public: // member functions
     bool useCustomSound() const; ///< Get the value for the 'Use custom sound' preference.
     void setCustomSoundPath(QString const &path) const; ///< Get the value for the 'Custom sound path' preferences.
     QString customSoundPath() const; ///< Set the value for the 'Custom sound path' preferences.
-    void setAutoCheckForUpdates(bool value); ///< Set the value for the 'Auto check for updates preference
-    bool autoCheckForUpdates() const; ///< Set the value for the 'Auto check for updates preference
     void setUseAutomaticSubstitution(bool value) const; ///< Set the value for the 'Use automatic substitution' preference
     bool useAutomaticSubstitution() const; ///< Get the value for the 'Use automatic substitution' preference
     void setAllowRealLineBreaksInSnippets(bool value) const; ///< Set whether restricted snippets may insert real line breaks.
@@ -71,9 +63,7 @@ public: // member functions
     bool warnAboutShortComboKeywords() const; ///< Get the value for the 'Warn about short combo keyword' preference
     void setWarnAboutEmptyComboKeywords(bool value) const; ///< Set the value for the 'Warn about empty combo keyword' preference
     bool warnAboutEmptyComboKeywords() const; ///< Get the value for the 'Warn about empty combo keyword' preference
-    bool setComboListFolderPath(QString const &path) const; ///< Set the path of the folder for saving the combo list
     QString comboListFolderPath() const; ///< Get the path of the folder for saving the combo list
-    static QString defaultComboListFolderPath(); ///< Get the default combo list folder path
     void setComboTriggerShortcut(SpShortcut const &shortcut) const; ///< Set the combo trigger shortcut
     SpShortcut comboTriggerShortcut() const; ///< Retrieve the combo trigger shortcut
     void setDefaultMatchingMode(EMatchingMode mode) const; ///< Set the value for the 'Default matching mode' preference.
@@ -82,10 +72,6 @@ public: // member functions
     ECaseSensitivity defaultCaseSensitivity() const; ///< Set the value for the 'Default case sensitivity' preference
     void setAutoBackup(bool value) const; ///< Set the value for the 'Auto backup' preference
     bool autoBackup() const; ///< Get the value for the 'Auto backup' preference
-    void setUseCustomBackupLocation(bool value) const; ///< Set the value for the 'Use custom backup location' preference.
-    bool useCustomBackupLocation() const; ///< Get the value for the 'Use custom backup location' preference.
-    void setCustomBackupLocation(QString const &path) const; ///< Set the value for the 'Custom backup location' preference.
-    QString customBackupLocation() const; ///< Get the value for the 'Custom backup location' preference.
     void setWriteDebugLogFile(bool value); ///< Set the value for the 'Write debug log file' preference.
     bool writeDebugLogFile() const; ///< Set the value for the 'Write debug log file' preference.
     QString lastComboImportExportPath() const; ///< Retrieve the path of the last imported and exported path
@@ -99,10 +85,6 @@ public: // member functions
     void setEmojiRightDelimiter(QString const &delimiter) const; ///< Set the right delimiter for emojis.
     void setShowEmojisInPickerWindow(bool show) const; ///< Set the value for the 'Show Emojis in picker window.
     bool showEmojisInPickerWindow() const; ///< Get the value for the 'Show Emojis in picker window.
-    qint32 delayBetweenKeystrokesMs() const; ///< Get the 'delay between keystrokes' when not using the clipboard for combo substitution
-    void setDelayBetweenKeystrokesMs(qint32 value) const; ///< Set the 'delay between keystrokes'
-    static qint32 minDelayBetweenKeystrokesMs(); ///< Get the minimum value for the 'delay between keystrokes' preference.
-    static qint32 maxDelayBetweenKeystrokesMs(); ///< Get the maximum value for the 'delay between keystrokes' preference.
     bool comboPickerEnabled() const; ///< Get the value for the 'Combo picker enabled'  preference.
     void setComboPickerEnabled(bool value) const; ///< Set the value for the 'Combo picker enabled'  preference.
     void setComboPickerShortcut(SpShortcut const &shortcut) const; ///< Set the combo picker shortcut.
@@ -115,26 +97,12 @@ public: // member functions
     static SpShortcut defaultAppEnableDisableShortcut(); ///< Return the default combo shortcut to enable/disable the application.
     void setBeeftextEnabled(bool enabled) const; ///< Set if beeftext is enabled.
     bool beeftextEnabled() const; ///< Set if beeftext is enabled.
-    void setUseLegacyCopyPaste(bool value) const; ///< Set he value for the 'Use legacy copy/paste' preference.
-    bool useLegacyCopyPaste() const; ///< Get the value for the 'Use legacy copy/paste' preference.
-    bool restoreClipboardAfterSubstitution() const; ///< Get the value for the 'Restore clipboard after substitution' preference.
-    void setRestoreClipboardAfterSubstitution(bool value); ///< Set the value for the 'Restore clipboard after substitution' preference.
     void setAlreadyConvertedRichTextCombos(bool value) const; ///< Set the value for the 'Already converted rich text combos' preference.
     bool alreadyConvertedRichTextCombos() const; ///< Get the value for the 'Already converted rich text combos' preference.
-    void setUseCustomPowershellVersion(bool value) const; ///< Set the value for the 'Use custom PowerShell version'.
-    bool useCustomPowershellVersion() const; ///< Get the value for the 'Use custom PowerShell version'.
-    void setCustomPowershellPath(QString const &path) const; ///< Set the value for the 'Custom PowerShell Path'.
-    QString customPowershellPath() const; ///< Set the value for the 'Custom PowerShell Path'.
     void setComboPickerWindowGeometry(QByteArray const &geometry) const; ///< Set the geometry of the combo picker window
     QByteArray comboPickerWindowGeometry() const; ///< Get the geometry of the combo picker.
-    void setUseShiftInsertForPasting(bool value) const; ///< Get the value for the 'Shift+Insert for pasting' preference
-    bool useShiftInsertForPasting() const; ///< Get the value for the 'Shift+Insert for pasting' preference
-    void setSkipVersionNumber(xmilib::VersionNumber const &versionNumber) const; /// Set the value for the 'Skip version number' preference.
-    xmilib::VersionNumber getSkipVersionNumber() const; /// Get the value for the 'Skip version number' preference.
-    void removeSkipVersionNumber() const; ///< Remove the value for the 'Skip version number' preference.
 
 signals:
-    void autoCheckForUpdatesChanged(bool value); ///< Signal emitted when the 'Auto check for updates' preference value changed
     void writeDebugLogFileChanged(bool value); ///< Signal emitted when the 'Write debug log file' preference value changed.s
 
 private: // member functions
@@ -172,7 +140,6 @@ private: // data members
         QString emojiRightDelimiter; ///< Cached value for the 'emoji right delimiter' preference.
         bool showEmojisInPickerWindow { false }; ///< Cached value for the 'Show emojis in picker window' preference.
         bool beeftextEnabled { true }; ///< Cached value for the 'Beeftext enabled' preference.
-        bool useShiftInsertForPasting { false }; ///< Cached value for use 'Use Shift+Insert for pasting' preference.
 
     private: // member functions
         void cacheComboTriggerShortcut(); ///< Read the combo trigger shortcut and cache it for faster access

@@ -9,7 +9,6 @@
 
 #include "stdafx.h"
 #include "ComboEditor.h"
-#include "Dialogs/ShortcutDialog.h"
 #include "BeeftextConstants.h"
 
 
@@ -41,12 +40,6 @@ QMenu *ComboEditor::createComboVariableMenu() {
     QMenu *menu = new QMenu(tr("&Insert Variable"), this);
 
     QAction *action = nullptr;
-    if constexpr (!constants::kRestrictedBuild) {
-        action = new QAction(tr("Clip&board Content"), this);
-        connect(action, &QAction::triggered, [&]() { this->insertTextInSnippetEdit("#{clipboard}", false); });
-        menu->addAction(action);
-    }
-
     QMenu *dtMenu = new QMenu(tr("&Date/Time"));
     action = new QAction(tr("D&ate"), this);
     connect(action, &QAction::triggered, [this]() { this->insertTextInSnippetEdit("#{date}", false); });
@@ -61,17 +54,6 @@ QMenu *ComboEditor::createComboVariableMenu() {
     connect(action, &QAction::triggered, [this]() { this->insertTextInSnippetEdit("#{dateTime:}", true); });
     dtMenu->addAction(action);
     menu->addMenu(dtMenu);
-    if constexpr (!constants::kRestrictedBuild) {
-        action = new QAction(tr("&Key"), this);
-        connect(action, &QAction::triggered, [this]() { this->insertTextInSnippetEdit("#{key:}", true); });
-        menu->addAction(action);
-        action = new QAction(tr("&Shortcut"), this);
-        connect(action, &QAction::triggered, this, &ComboEditor::insertShortcutVariable);
-        menu->addAction(action);
-        action = new QAction(tr("&Delay"), this);
-        connect(action, &QAction::triggered, [this]() { this->insertTextInSnippetEdit("#{delay:}", true); });
-        menu->addAction(action);
-    }
 
     action = new QAction(tr("C&ursor Position"), this);
     connect(action, &QAction::triggered, [this]() { this->insertTextInSnippetEdit("#{cursor}", false); });
@@ -92,14 +74,6 @@ QMenu *ComboEditor::createComboVariableMenu() {
     comboMenu->addAction(action);
     menu->addMenu(comboMenu);
 
-    if constexpr (!constants::kRestrictedBuild) {
-        action = new QAction(tr("En&vironment Variable"), this);
-        connect(action, &QAction::triggered, [this]() { this->insertTextInSnippetEdit("#{envVar:}", true); });
-        menu->addAction(action);
-        action = new QAction(tr("&PowerShell Script"), this);
-        connect(action, &QAction::triggered, this, &ComboEditor::insertPowershellVariable);
-        menu->addAction(action);
-    }
     action = new QAction(tr("User &Input"), this);
     connect(action, &QAction::triggered, [this]() { this->insertTextInSnippetEdit("#{input:}", true); });
     menu->addAction(action);
@@ -139,22 +113,3 @@ void ComboEditor::onEditorContextMenuRequested(QPoint const &pos) {
     menu->exec(this->viewport()->mapToGlobal(pos));
 }
 
-
-//****************************************************************************************************************************************************
-//
-//****************************************************************************************************************************************************
-void ComboEditor::insertPowershellVariable() {
-    QString const path = QFileDialog::getOpenFileName(this, tr("Select PowerShell script file"), QString(), tr("PowerShell script files (*.ps1);;All files (*.*)"));
-    if (!path.isEmpty())
-        this->insertTextInSnippetEdit(QString("#{powershell:%1}").arg(path));
-}
-
-
-//****************************************************************************************************************************************************
-//
-//****************************************************************************************************************************************************
-void ComboEditor::insertShortcutVariable() {
-    SpShortcut const shortcut = ShortcutDialog::run(this, false);
-    if (shortcut)
-        this->insertTextInSnippetEdit(QString("#{shortcut:%1}").arg(shortcut->toString()));
-}

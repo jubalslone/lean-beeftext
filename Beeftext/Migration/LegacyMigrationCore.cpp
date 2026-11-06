@@ -131,7 +131,7 @@ QList<QList<qsizetype>> groupSourcesByContent(QList<QByteArray> const &digests) 
         auto const existing = groupByDigest.constFind(digests[i]);
         if (existing == groupByDigest.constEnd()) {
             groupByDigest.insert(digests[i], result.size());
-            result.append({ i });
+            result.append(QList<qsizetype> { i });
         } else {
             result[*existing].append(i);
         }

@@ -6,7 +6,7 @@ For ordinary bugs and feature requests, check the [existing issues](https://gith
 
 Potential security vulnerabilities should not be reported with sensitive details in a public issue. Please follow [SECURITY.md](../SECURITY.md) instead.
 
-Lean Beeftext deliberately has a narrower execution model than upstream Beeftext. Changes must preserve the boundaries in [SECURITY_MODEL.md](../SECURITY_MODEL.md), including literal handling of blocked variables, direct text insertion, modifier refusal, bounded cursor movement, portable containment, and disabled upstream updating. Feature requests that widen those boundaries need especially careful justification and review.
+Lean Beeftext deliberately has a narrower execution model than upstream Beeftext. Changes must preserve the boundaries in [SECURITY_MODEL.md](../SECURITY_MODEL.md), including literal handling of blocked variables, direct text insertion, modifier refusal, bounded cursor movement, portable containment, and the absence of any network or updater code. Feature requests that widen those boundaries need especially careful justification and review.
 
 For code changes:
 

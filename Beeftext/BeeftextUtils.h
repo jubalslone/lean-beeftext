@@ -13,6 +13,11 @@
 #include "Shortcut.h"
 
 
+/// Marker stored in the dwExtraInfo field of every keyboard event Lean Beeftext injects, so the low-level
+/// keyboard hook can recognize and ignore its own output. The value spells "LEAN" in ASCII.
+ULONG_PTR constexpr kLeanInjectedInputMarker = 0x4C45414E;
+
+
 //****************************************************************************************************************************************************
 /// \brief Enumeration for the source that triggered a combo.
 //****************************************************************************************************************************************************
@@ -28,19 +33,12 @@ bool usePortableAppsFolderLayout(); ///< Test if the application is using the Po
 bool isBeeftextTheForegroundApplication(); ///< Check whether Beeftext is the foreground application
 QString getActiveExecutableFileName(); ///< Return the name of the active application's executable file
 QString htmlToPlainText(QString const &snippet); ///< Return the plain text for a snippet.
-void eraseChars(qint32 count); ///< Erase characters by generating backspace characters.
-QString ensureStringHasCRLFLineEndings(QString const &str); ///< Return a copy of str with CR/LF line endings.
-void insertText(QString const &text); ///< Insert the text given text.
-void renderShortcut(SpShortcut const &shortcut); ///< Synthesize the given shortcut.
-void moveCursorLeft(qint32 count); ///< Move the cursor the the left by the specified number of characters.
 void performRestrictedTextInput(qint32 eraseCount, QString const &text, qint32 cursorLeftCount,
     bool allowRealLineBreaks); ///< Perform one fail-closed restricted input transaction.
 bool performTextSubstitution(qint32 charCount, QString const &newText, qint32 cursorPos, ETriggerSource source); ///< Substitute the last characters with the specified text
 void reportError(QWidget *parent, QString const &logMessage, QString const &userMessage = QString()); ///< Report an error to the user
 bool isAppRunningOnWindows10OrHigher(); ///< Return true if and only if the application is running on windows 10 or higher
 qint32 printableCharacterCount(QString const &str); ///< Return the (estimated) number of printable characters in a string
-QMimeData *mimeDataFromText(QString const &text); ///< Create a MIME data instance for text content.
-QMimeData *mimeDataFromHtml(QString const &html);  ///< Create a MIME data instance for HTML content.
 bool warnAndConvertHtmlCombos(); ///< Warn the user about discontinued rich text combo support and convert them to plain text.
 QString colorToHex(QColor const &color, bool includeAlpha); ///< Get a hex representation of a color.
 bool questionDialog(QWidget *parent, QString const &title, QString const &text,

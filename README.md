@@ -154,7 +154,7 @@ Malformed, unknown, and blocked variables remain visible as literal text. Lean B
 
 An exact, case-sensitive `#{cursor}` marker is removed after nested combos, input, and text transformations have finished. If a snippet contains more than one exact marker, all exact markers are removed and the last one determines the final caret position.
 
-Caret movement is allowed only when the text after the final marker can be counted predictably and the movement stays within the newly inserted text. If that suffix is ambiguous—for example, because it contains non-ASCII text—the markers remain literal and no caret movement is sent. Transforming a marker to another case, such as `#{CURSOR}`, makes it ordinary literal text.
+Caret movement is allowed only when the text after the final marker can be counted predictably and the movement stays within the newly inserted text. Ordinary text in any script counts predictably, including accented letters, CJK, and Cyrillic. If the text after the marker contains emoji, combining accents, or similar characters whose width differs between applications, the marker is still removed but the caret stays at the end of the inserted text. Transforming a marker to another case, such as `#{CURSOR}`, makes it ordinary literal text.
 
 ## Multiline Snippets
 
@@ -252,7 +252,7 @@ See [INSTALLER.md](INSTALLER.md) for exact storage paths, installer identity, mi
 
 ## Security Model
 
-Lean Beeftext intentionally limits combo evaluation and text insertion. It does not restore clipboard insertion, PowerShell execution, environment-variable reads, arbitrary key/shortcut/delay variables, Discord clipboard behavior, or upstream updater activity. Modifiers held during a substitution cause the operation to fail closed, and keyboard-hook restoration is covered by regression tests.
+Lean Beeftext intentionally limits combo evaluation and text insertion. It does not contain clipboard insertion, PowerShell execution, environment-variable reads, arbitrary key/shortcut/delay variables, Discord clipboard behavior, or upstream updater code; those upstream components are removed from the source rather than switched off, and the application does not link Qt Network. Modifiers held during a substitution cause the operation to fail closed, and the keyboard hook ignores the application's own injected output.
 
 This is a design boundary, not a claim of formal certification or absolute security. See [SECURITY_MODEL.md](SECURITY_MODEL.md) for technical details and QA expectations.
 
@@ -286,7 +286,7 @@ The supported CI build uses:
 
 - Windows and Visual Studio 2022
 - CMake
-- Qt 6.8 LTS for 64-bit MSVC 2022
+- Qt 6.8.3 LTS for 64-bit MSVC 2022 (pinned in CI so the shipped Qt binaries are the same for every build)
 - Inno Setup 7.1.0 for the installed distribution
 - The recursively checked-out XMiLib and emojilib submodules
 
@@ -298,6 +298,8 @@ cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTING=ON
 cmake --build build --config Release --parallel
 ctest --test-dir build -C Release --output-on-failure
 ```
+
+The `LeanSecurityModelTests` target built by `-DBUILD_TESTING=ON` depends only on Qt Core and the XMiLib submodule, so it also builds and runs on Linux with a system Qt 6 for quick checks of the restricted-model logic.
 
 The GitHub Actions Windows workflow performs the same configure, Release build, complete test run, clean-source checks, shared installed/portable staging, provenance recording, and packaged-file checksum generation. It compiles the installer, checks the installed payload cannot activate portable mode, and exercises silent install, same-version reinstall, and data-preserving uninstall. It produces both a portable QA artifact and installer from the exact same source commit.
 

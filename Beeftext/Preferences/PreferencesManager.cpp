@@ -14,12 +14,10 @@
 #include "I18nManager.h"
 #include "Picker/PickerWindow.h"
 #include "Combo/ComboManager.h"
-#include "Clipboard/ClipboardManager.h"
-#include "Backup/BackupManager.h"
 #include "BeeftextUtils.h"
 #include "BeeftextGlobals.h"
 #include "BeeftextConstants.h"
-#include "TLFSafeBuild.h"
+#include "RestrictedModel.h"
 
 
 using namespace xmilib;
@@ -34,10 +32,8 @@ QString const kKeyAppEnableShortcutKeyCodeDeprecated = "AppEnableDisableShortcut
 QString const kKeyAppEnableShortcutModifiersDeprecated = "AppEnableDisableShortcutModifiers"; ///< The setting key for the app enable/disable shortcut modifiers.
 QString const kKeyAppEnableShortcutScanCodeDeprecated = "AppEnableDisableShortcutScanCode"; ///< The setting key for the app enable/disable shortcut scan code.
 QString const kKeyAutoBackup = "AutoBackup"; ///< The setting key for the 'Auto backup' preference
-QString const kKeyAutoCheckForUpdates = "AutoCheckForUpdate"; ///< The settings key for the 'Autostart at login' preference
 QString const kKeyAutoStartAtLogin = "AutoStartAtLogin"; ///< The settings key for the 'Autostart at login' preference
 QString const kKeyBeeftextEnabled = "BeeftextEnabled"; ///< The setting key for the 'Beeftext enabled' preference.
-QString const kKeyComboListFolderPath = "ComboListFolderPath"; ///< The setting key for the combo list folder path
 QString const kKeyComboPickerEnabled = "ComboPickerEnabled"; ///< The setting key for the 'Combo picker enabled' preference.
 QString const kKeyComboPickerShortcut = "ComboPickerShortcut"; ///< The setting key for the combo picker shortcut.
 QString const kKeyComboPickerShortcutModifiersDeprecated = "ComboPickerShortcutModifiers"; ///< The setting key for the combo picker shortcut modifiers
@@ -49,43 +45,31 @@ QString const kKeyComboTriggerShortcutKeyCodeDeprecated = "ComboTriggerShortcutK
 QString const kKeyComboTriggerShortcutScanCodeDeprecated = "ComboTriggerShortcutScanCode"; ///< The setting key for the combo trigger shortcut scan code
 QString const kKeyDefaultMatchingMode = "DefaultMatchingMode"; ///< The setting key for the default matching mode.
 QString const kKeyDefaultCaseSensitivity = "DefaultCaseSensitivity"; ///< The setting key for the 'Default case sensitivity' preference.
-QString const kKeyCustomBackupLocation = "CustomBackupLocation"; ///< The settings key for the 'Custom backup location' preference.
 QString const kKeyCustomSoundPath = "CustomSoundPath"; ///< The settings key for the 'Custom sound path' preference.
-QString const kKeyDelayBetweenKeystrokes = "DelayBetweenKeystrokes"; ///< The setting key for the 'Delay between keystrokes' preferences value
 QString const kKeyEmojiLeftDelimiter = "EmojiLeftDelimiter"; ///< The setting key for the emoji left delimiter.
 QString const kKeyEmojiRightDelimiter = "EmojiRightDelimiter"; ///< The setting key for the emoji right delimiter.
 QString const kKeyEmojiShortcodesEnabled = "EmojiShortcodesEnabled"; ///< The setting key for the 'Emoji shortcodes enabled'
 QString const kKeyShowEmojisInPickerWindow = "ShowEmojisInPickerWindow"; ///< The setting key for the 'Show emojis in picker window preference. 
 QString const kKeyEnableAppEnableDisableShortcut = "EnableAppEnableDisableShortcut"; ///< The setting key for the 'enable app enable/disable shortcut' preference.
-QString const kKeyFileMarkedForDeletion = "markedForDeletion"; ///< The path of the file marked for deletion on next application startup
 QString const kKeyGeometry = "Geometry"; ///< The settings key for storing the geometry
 QString const kKeyLastComboImportExportPath = "LastComboImportExportPath"; ///< The setting key for 'Last combo import/export path' preference
-QString const kKeyLastUpdateCheckDateTime = "LastUpdateCheck"; ///< The setting key for the last update check date/time
 QString const kKeyLocale = "Locale"; ///< The settings key for the locale
 QString const kKeySplitterState = "MainWindowSplitterState"; ///< The setting key for storing the main window splitter state.
 QString const kKeyUseAutomaticSubstitution = "UseAutomaticSubstitution"; ///< The setting key for the 'Use automatic substitution' preference
-QString const kKeyUseCustomBackupLocation = "UseCustomBackupLocation"; ///< The settings key for the 'Use custom backup location' preference.
 QString const kKeyUseCustomSound = "UseCustomSound"; ///< The settings key for the 'Use custom sound' preference.
 QString const kKeyWarnAboutShortComboKeyword = "WarnAboutShortComboKeyword"; ///< The setting key for the 'Warn about short combo keyword' preference
 QString const kKeyWarnAboutEmptyComboKeyword = "WarnAboutEmptyComboKeyword"; ///< The setting key for the 'Warn about empty combo keyword' preference
 QString const kKeyWriteDebugLogFile = "WriteDebugLogFile"; ///< The setting key for the 'Write debug log file' preference.
 QString const kKeyRichTextDeprecationWarningHasAlreadyBeenDisplayed = "RichTextDeprecationWarningHasAlreadyBeenDisplayed"; ///< The setting key for teh 'Rich Text Deprecation Warning Has Already Been Displayed' preference.
-QString const kKeyUseLegacyCopyPaste = "UseLegacyCopyPaste"; ///< The setting key for the 'Use legacy copy/paste' preference.
-QString const kKeyRestoreClipboardAfterSubstitution = "RestoreClipboardAfterSubstitution"; ///< The settings key for the 'Restore clipboard after substitution' preference.
 QString const kKeyComboTriggersOnSpace = "ComboTriggersOnSpace"; ///< The setting key for the 'Combo triggers on space' preference.
 QString const kKeyKeepFinalSpaceCharacter = "KeepFinalSpaceCharacter"; ///< The setting key for the 'Keep final space character' preference.
 QString const kKeyAlreadyConvertedRichTextCombos = "AlreadyConvertedRichTextCombos"; ///< The setting key for the 'Already converted rich text combos' preference.
-QString const kKeyUseCustomPowershellVersion = "UseCustomPowershellVersion"; ///< The setting key for the 'Use custom PowerShell version'.
-QString const kKeyCustomPowershellPath = "CustomPowershellPath"; ///< The setting key for the 'Custom PowerShell path'.
 QString const kKeyComboPickerWindowGeometry = "ComboPickerWindowGeometry"; ///< The settings key for the combo picker geometry.
-QString const kKeyUseShiftInsertForPasting = "UseShiftInsertForPasting"; ///< The settings key for the 'Use Shift+Insert for pasting' preference
-QString const kKeySkipVersionNumber = "SkipVersionNumber"; ///< The settings key for the 'skip version number' preference.
 
 
 SpShortcut const kDefaultAppEnableDisableShortcut = Shortcut::fromModifiersAndKey(Qt::AltModifier | Qt::ShiftModifier
     | Qt::ControlModifier, Qt::Key('V')); ///< The default value for the 'combo trigger shortcut' preference
 bool constexpr kDefaultAutoBackup = true; ///< The default value for the 'Auto backup' preference
-bool constexpr kDefaultAutoCheckForUpdates = true; ///< The default value for the 'Auto check for update preference
 bool constexpr kDefaultAutoStartAtLogin = false; ///< The default value for the 'Autostart at login' preference
 bool constexpr kDefaultBeeftextEnabled = true; ///< The default value for the 'Beeftext is enabled' preference.
 bool constexpr kDefaultComboPickerEnabled = true; ///< The default value for the 'Combo picker enabled' preference.
@@ -93,7 +77,6 @@ SpShortcut const kDefaultComboTriggerShortcut = Shortcut::fromModifiersAndKey(Qt
     | Qt::ControlModifier, Qt::Key('B')); ///< The default value for the 'combo trigger shortcut' preference
 EMatchingMode kDefaultDefaultMatchingMode = EMatchingMode::Strict; ///< The default value for the 'Default matching mode preference'.
 ECaseSensitivity kDefaultDefaultCaseSensitivity = ECaseSensitivity::CaseSensitive; ///< The default value for the 'Default case sensitivity' preference.
-qint32 constexpr kDefaultDelayBetweenKeystrokesMs = 12; ///< The default valur for the 'Delay between keystrokes' preference.
 QString const kDefaultEmojiLeftDelimiter = "|"; ///< The default left delimiter for emojis
 QString const kDefaultEmojiRightDelimiter = "|"; ///< The default left delimiter for emojis
 bool constexpr kDefaultEmojiShortcodesEnabled = false; ///< The default value for the 'Emoji shortcodes enabled' preference.
@@ -101,21 +84,14 @@ bool constexpr kDefaultShowEmojisInPickerWindow = false; ///< The default value 
 bool constexpr kDefaultEnableAppEnableDisableShortcut = false; ///< The default value for the 'enable app enable/disable shortcut' preference.
 QString const kDefaultLastComboImportExportPath = QDir(QStandardPaths::writableLocation(
     QStandardPaths::DesktopLocation)).absoluteFilePath("Combos.json");///< The default value for the 'Last combo import/export path' preference
-qint32 constexpr kMinValueDelayBetweenKeystrokesMs = 0; ///< The default valur for the 'Delay between keystrokes' preference.
-qint32 constexpr kMaxValueDelayBetweenKeystrokesMs = 500; ///< The default valur for the 'Delay between keystrokes' preference.
 bool constexpr kDefaultUseAutomaticSubstitution = true; ///< The default value for the 'Use automatic substitution' preference
-bool constexpr kDefaultUseCustomBackupLocation = false; ///< The default value for the 'Use custom backup location' preference.
 bool constexpr kDefaultUseCustomSound = false; ///< The default value for the 'Use custom sound' preference.
 bool constexpr kDefaultWarnAboutShortComboKeyword = true; ///< The default value for the 'Warn about short combo keyword' preference
 bool constexpr kDefaultWarnAboutEmptyComboKeyword = true; ///< The default value for the 'Warn about empty combo keyword' preference
 bool constexpr kDefaultWriteDebugLogFile = true; ///< The default value for the 'Write debug log file' preference
 bool constexpr kDefaultKeyRichTextDeprecationWarningHasAlreadyBeenDisplayed = false; ///< The default value for the 'Rich Text Deprecation Warning Has Already Been Displayed' preference.
-bool constexpr kDefaultUseLegacyCopyPaste = false; ///< The default value for the 'Use legacy copy/paste' preference.
-bool constexpr kDefaultRestoreClipboardAfterSubstitution = true; ///< The default value for the 'Restore clipboard after substitution' preference.
 bool constexpr kDefaultComboTriggersOnSpace = false; ///< The default value for the 'Combo triggers on space' preference.
 bool constexpr kDefaultKeepFinalSpaceCharacter = false; ///< The default value for the 'Combo triggers on space' preference.
-bool constexpr kDefaultUseCustomPowershellVersion = false; ///< The default value for the 'Use custom PowerShell version' preference.
-bool constexpr kDefaultUseShiftInsertForPasting = false; ///< The default value for the 'Use Shift+Insert for pasting' preference.
 
 }
 
@@ -190,7 +166,7 @@ SpShortcut readShortcutFromPreferences(QSettings const &settings, QString const 
 void PreferencesManager::Cache::init() {
     // Cache often accessed values
     useAutomaticSubstitution = ::readSettings<bool>(settings_, kKeyUseAutomaticSubstitution, kDefaultUseAutomaticSubstitution);
-    allowRealLineBreaksInSnippets = tlf::readAllowRealLineBreaksInSnippets(settings_);
+    allowRealLineBreaksInSnippets = restricted::readAllowRealLineBreaksInSnippets(settings_);
     comboTriggersOnSpace = ::readSettings<bool>(settings_, kKeyComboTriggersOnSpace, kDefaultComboTriggersOnSpace);
     keepFinalSpaceCharacter = ::readSettings<bool>(settings_, kKeyKeepFinalSpaceCharacter, kDefaultKeepFinalSpaceCharacter);
     cacheComboTriggerShortcut();
@@ -205,7 +181,6 @@ void PreferencesManager::Cache::init() {
     emojiLeftDelimiter = ::readSettings<QString>(settings_, kKeyEmojiLeftDelimiter, kDefaultEmojiLeftDelimiter);
     emojiRightDelimiter = ::readSettings<QString>(settings_, kKeyEmojiRightDelimiter, kDefaultEmojiRightDelimiter);
     beeftextEnabled = ::readSettings<bool>(settings_, kKeyBeeftextEnabled, kDefaultBeeftextEnabled);
-    useShiftInsertForPasting = ::readSettings<bool>(settings_, kKeyUseShiftInsertForPasting, kDefaultUseShiftInsertForPasting);
 }
 
 
@@ -349,37 +324,28 @@ void PreferencesManager::init() const {
 void PreferencesManager::reset() {
     this->setAppEnableDisableShortcut(defaultAppEnableDisableShortcut());
     this->setAutoBackup(kDefaultAutoBackup);
-    this->setAutoCheckForUpdates(kDefaultAutoCheckForUpdates);
     this->setComboPickerEnabled(kDefaultComboPickerEnabled);
     this->setComboPickerShortcut(defaultComboPickerShortcut());
     this->setComboTriggerShortcut(kDefaultComboTriggerShortcut);
     this->setDefaultMatchingMode(kDefaultDefaultMatchingMode);
     this->setDefaultCaseSensitivity(kDefaultDefaultCaseSensitivity);
-    this->setCustomBackupLocation(globals::defaultBackupFolderPath());
     this->setCustomSoundPath(QString());
-    this->setDelayBetweenKeystrokesMs(kDefaultDelayBetweenKeystrokesMs);
     this->setEmojiLeftDelimiter(kDefaultEmojiLeftDelimiter);
     this->setEmojiRightDelimiter(kDefaultEmojiRightDelimiter);
     this->setEmojiShortcodeEnabled(kDefaultEmojiShortcodesEnabled);
     this->setEnableAppEnableDisableShortcut(kDefaultEnableAppEnableDisableShortcut);
     this->setLocale(I18nManager::instance().validateLocale(QLocale::system()));
-	this->setPlaySoundOnCombo(tlf::kDefaultPlaySoundOnCombo);
+	this->setPlaySoundOnCombo(restricted::kDefaultPlaySoundOnCombo);
     this->setUseAutomaticSubstitution(kDefaultUseAutomaticSubstitution);
-    this->setAllowRealLineBreaksInSnippets(tlf::kDefaultAllowRealLineBreaksInSnippets);
+    this->setAllowRealLineBreaksInSnippets(restricted::kDefaultAllowRealLineBreaksInSnippets);
     this->setComboTriggersOnSpace(kDefaultComboTriggersOnSpace);
     this->setKeepFinalSpaceCharacter(kDefaultKeepFinalSpaceCharacter);
-    this->setUseCustomBackupLocation(kDefaultUseCustomBackupLocation);
     this->setUseCustomSound(kDefaultUseCustomSound);
     this->setWarnAboutShortComboKeywords(kDefaultWarnAboutShortComboKeyword);
     this->setWriteDebugLogFile(kDefaultWriteDebugLogFile);
     this->resetWarnings();
-    this->setUseLegacyCopyPaste(kDefaultUseLegacyCopyPaste);
-    this->setRestoreClipboardAfterSubstitution(kDefaultRestoreClipboardAfterSubstitution);
-    this->setUseShiftInsertForPasting(kDefaultUseShiftInsertForPasting);
-    if (!isInPortableMode()) {
+    if (!isInPortableMode())
         this->setAutoStartAtLogin(kDefaultAutoStartAtLogin);
-        this->setComboListFolderPath(globals::appDataDir());
-    }
     applyComboPickerPreferences();
 }
 
@@ -406,30 +372,6 @@ void PreferencesManager::setAlreadyLaunched() const {
 //****************************************************************************************************************************************************
 bool PreferencesManager::alreadyLaunched() const {
     return this->readSettings<bool>(kKeyAlreadyLaunched, false);
-}
-
-
-//****************************************************************************************************************************************************
-/// \param[in] path The path of the file to delete on next application startup
-//****************************************************************************************************************************************************
-void PreferencesManager::setFileMarkedForDeletionOnStartup(QString const &path) const {
-    settings_->setValue(kKeyFileMarkedForDeletion, path);
-}
-
-
-//****************************************************************************************************************************************************
-/// \return The path of the file marked for deletion on next application startup
-//****************************************************************************************************************************************************
-QString PreferencesManager::fileMarkedForDeletionOnStartup() const {
-    return readSettings<QString>(kKeyFileMarkedForDeletion);
-}
-
-
-//****************************************************************************************************************************************************
-// 
-//****************************************************************************************************************************************************
-void PreferencesManager::clearFileMarkedForDeletionOnStartup() const {
-    settings_->remove(kKeyFileMarkedForDeletion);
 }
 
 
@@ -485,23 +427,6 @@ void PreferencesManager::setLocale(QLocale const &locale) const {
 
 
 //****************************************************************************************************************************************************
-/// \param[in] dateTime The date/time of the last update check
-//****************************************************************************************************************************************************
-void PreferencesManager::setLastUpdateCheckDateTime(QDateTime const &dateTime) const {
-    settings_->setValue(kKeyLastUpdateCheckDateTime, dateTime);
-}
-
-
-//****************************************************************************************************************************************************
-/// \return The date/time of the last update check
-//****************************************************************************************************************************************************
-QDateTime PreferencesManager::lastUpdateCheckDateTime() const {
-    QVariant const v = settings_->value(kKeyLastUpdateCheckDateTime);
-    return (v.isNull() || !v.canConvert<QDateTime>()) ? QDateTime() : v.toDateTime();
-}
-
-
-//****************************************************************************************************************************************************
 /// \param[in] value The value for the preference
 //****************************************************************************************************************************************************
 void PreferencesManager::setAutoStartAtLogin(bool value) const {
@@ -529,7 +454,7 @@ bool PreferencesManager::autoStartAtLogin() const {
 /// \param[in] value The value for the preference
 //****************************************************************************************************************************************************
 void PreferencesManager::setPlaySoundOnCombo(bool value) const {
-	tlf::writePlaySoundOnCombo(*settings_, value);
+	restricted::writePlaySoundOnCombo(*settings_, value);
 }
 
 
@@ -537,7 +462,7 @@ void PreferencesManager::setPlaySoundOnCombo(bool value) const {
 /// \return The value for the preference
 //****************************************************************************************************************************************************
 bool PreferencesManager::playSoundOnCombo() const {
-	return tlf::readPlaySoundOnCombo(*settings_);
+	return restricted::readPlaySoundOnCombo(*settings_);
 }
 
 
@@ -574,25 +499,6 @@ QString PreferencesManager::customSoundPath() const {
 
 
 //****************************************************************************************************************************************************
-/// \param[in] value The value for the preference
-//****************************************************************************************************************************************************
-void PreferencesManager::setAutoCheckForUpdates(bool value) {
-    if (this->autoCheckForUpdates() == value)
-        return;
-    settings_->setValue(kKeyAutoCheckForUpdates, value);
-    emit autoCheckForUpdatesChanged(value);
-}
-
-
-//****************************************************************************************************************************************************
-/// \return The value for the preference
-//****************************************************************************************************************************************************
-bool PreferencesManager::autoCheckForUpdates() const {
-    return this->readSettings<bool>(kKeyAutoCheckForUpdates, kDefaultAutoCheckForUpdates);
-}
-
-
-//****************************************************************************************************************************************************
 /// As the getter for this value is polled frequently (at every keystroke), it is cached
 /// \param[in] value The new value for the preference
 //****************************************************************************************************************************************************
@@ -615,7 +521,7 @@ bool PreferencesManager::useAutomaticSubstitution() const {
 //****************************************************************************************************************************************************
 void PreferencesManager::setAllowRealLineBreaksInSnippets(bool value) const {
     cache_->allowRealLineBreaksInSnippets = value;
-    tlf::writeAllowRealLineBreaksInSnippets(*settings_, value);
+    restricted::writeAllowRealLineBreaksInSnippets(*settings_, value);
 }
 
 
@@ -695,38 +601,10 @@ bool PreferencesManager::warnAboutEmptyComboKeywords() const {
 
 
 //****************************************************************************************************************************************************
-/// \param[in] path The path.
-/// \return true if and only if the operation was successful.
-//****************************************************************************************************************************************************
-bool PreferencesManager::setComboListFolderPath(QString const &path) const {
-    if (isInPortableMode() || constants::kRestrictedBuild) {
-        globals::debugLog().addWarning("Ignoring an attempt to change the fixed combo list folder.");
-        return false;
-    }
-    QString const previousPath = QDir::fromNativeSeparators(comboListFolderPath());
-    settings_->setValue(kKeyComboListFolderPath, path);
-    if (!ComboManager::instance().saveComboListToFile()) {
-        settings_->setValue(kKeyComboListFolderPath, previousPath);
-        return false;
-    }
-    return true;
-}
-
-
-//****************************************************************************************************************************************************
 /// \return The value for the preference
 //****************************************************************************************************************************************************
 QString PreferencesManager::comboListFolderPath() const {
-    if (isInPortableMode() || constants::kRestrictedBuild)
-        return defaultComboListFolderPath();
-    return this->readSettings<QString>(kKeyComboListFolderPath, defaultComboListFolderPath());
-}
-
-
-//****************************************************************************************************************************************************
-//// \return The path of the default combo list folder
-//****************************************************************************************************************************************************
-QString PreferencesManager::defaultComboListFolderPath() {
+    // The combo list location is fixed: the portable Data folder, or the installed Documents data folder.
     return isInPortableMode() ? globals::portableModeDataFolderPath() : globals::appDataDir();
 }
 
@@ -777,63 +655,6 @@ void PreferencesManager::setAutoBackup(bool value) const {
 //****************************************************************************************************************************************************
 bool PreferencesManager::autoBackup() const {
     return this->readSettings<bool>(kKeyAutoBackup, kDefaultAutoBackup);
-}
-
-
-//****************************************************************************************************************************************************
-/// \param[in] value The value for the preference.
-//****************************************************************************************************************************************************
-void PreferencesManager::setUseCustomBackupLocation(bool value) const {
-    if (isInPortableMode()) {
-        settings_->setValue(kKeyUseCustomBackupLocation, false);
-        if (value)
-            globals::debugLog().addWarning("Ignoring a custom backup location while running in portable mode.");
-        return;
-    }
-
-    QString const oldPath = globals::backupFolderPath();
-    settings_->setValue(kKeyUseCustomBackupLocation, value);
-    QString const newPath = globals::backupFolderPath();
-    if (QDir(oldPath).canonicalPath() != globals::backupFolderPath())
-        BackupManager::moveBackupFolder(oldPath, newPath);
-}
-
-
-//****************************************************************************************************************************************************
-/// \return The value for the preference
-//****************************************************************************************************************************************************
-bool PreferencesManager::useCustomBackupLocation() const {
-    if (isInPortableMode())
-        return false;
-    return this->readSettings<bool>(kKeyUseCustomBackupLocation, kDefaultUseCustomBackupLocation);
-}
-
-
-//****************************************************************************************************************************************************
-/// \param[in] path The path of the custom backup location.
-//****************************************************************************************************************************************************
-void PreferencesManager::setCustomBackupLocation(QString const &path) const {
-    if (isInPortableMode() || constants::kRestrictedBuild) {
-        if (QDir::cleanPath(path) != QDir::cleanPath(globals::defaultBackupFolderPath()))
-            globals::debugLog().addWarning("Ignoring a custom backup path in a fixed-storage mode.");
-        return;
-    }
-
-    QString const oldPath = globals::backupFolderPath();
-    settings_->setValue(kKeyCustomBackupLocation, path);
-    QString const newPath = globals::backupFolderPath();
-    if (QDir(oldPath).canonicalPath() != globals::backupFolderPath())
-        BackupManager::moveBackupFolder(oldPath, newPath);
-}
-
-
-//****************************************************************************************************************************************************
-/// \return The custom backup location.
-//****************************************************************************************************************************************************
-QString PreferencesManager::customBackupLocation() const {
-    if (isInPortableMode() || constants::kRestrictedBuild)
-        return globals::defaultBackupFolderPath();
-    return this->readSettings<QString>(kKeyCustomBackupLocation, globals::defaultBackupFolderPath());
 }
 
 
@@ -948,38 +769,6 @@ void PreferencesManager::setShowEmojisInPickerWindow(bool show) const {
 //****************************************************************************************************************************************************
 bool PreferencesManager::showEmojisInPickerWindow() const {
     return cache_->showEmojisInPickerWindow;
-}
-
-
-//****************************************************************************************************************************************************
-/// \return The value for the preference.
-//****************************************************************************************************************************************************
-qint32 PreferencesManager::delayBetweenKeystrokesMs() const {
-    return qBound<qint32>(kMinValueDelayBetweenKeystrokesMs, this->readSettings<qint32>(kKeyDelayBetweenKeystrokes, kDefaultDelayBetweenKeystrokesMs), kMaxValueDelayBetweenKeystrokesMs);
-}
-
-
-//****************************************************************************************************************************************************
-/// \param[in] value The value for the preference.
-//****************************************************************************************************************************************************
-void PreferencesManager::setDelayBetweenKeystrokesMs(qint32 value) const {
-    settings_->setValue(kKeyDelayBetweenKeystrokes, qBound<qint32>(kMinValueDelayBetweenKeystrokesMs, value, kMaxValueDelayBetweenKeystrokesMs));
-}
-
-
-//****************************************************************************************************************************************************
-/// \return The minimum value for the 'delay between keystrokes' preferences.
-//****************************************************************************************************************************************************
-qint32 PreferencesManager::minDelayBetweenKeystrokesMs() {
-    return kMinValueDelayBetweenKeystrokesMs;
-}
-
-
-//****************************************************************************************************************************************************
-/// \return The maximum value for the 'delay between keystrokes' preferences.
-//****************************************************************************************************************************************************
-qint32 PreferencesManager::maxDelayBetweenKeystrokesMs() {
-    return kMaxValueDelayBetweenKeystrokesMs;
 }
 
 
@@ -1135,40 +924,6 @@ bool PreferencesManager::beeftextEnabled() const {
 //****************************************************************************************************************************************************
 /// \param[in] value The value for the preference.
 //****************************************************************************************************************************************************
-void PreferencesManager::setUseLegacyCopyPaste(bool value) const {
-    settings_->setValue(kKeyUseLegacyCopyPaste, value);
-    ClipboardManager::setClipboardManagerType(value ? ClipboardManager::EType::Legacy :
-        ClipboardManager::EType::Default);
-}
-
-
-//****************************************************************************************************************************************************
-/// \return The value for the preference.
-//****************************************************************************************************************************************************
-bool PreferencesManager::useLegacyCopyPaste() const {
-    return readSettings<bool>(kKeyUseLegacyCopyPaste, kDefaultUseLegacyCopyPaste);
-}
-
-
-//****************************************************************************************************************************************************
-// \param[in] value The value for the 'Restore clipboard after substitution' preference.
-//****************************************************************************************************************************************************
-void PreferencesManager::setRestoreClipboardAfterSubstitution(bool value) {
-    settings_->setValue(kKeyRestoreClipboardAfterSubstitution, value);
-}
-
-
-//****************************************************************************************************************************************************
-// return The value for the 'Restore clipboard after substitution' preference.
-//****************************************************************************************************************************************************
-bool PreferencesManager::restoreClipboardAfterSubstitution() const {
-    return readSettings<bool>(kKeyRestoreClipboardAfterSubstitution, kDefaultRestoreClipboardAfterSubstitution);
-}
-
-
-//****************************************************************************************************************************************************
-/// \param[in] value The value for the preference.
-//****************************************************************************************************************************************************
 void PreferencesManager::setAlreadyConvertedRichTextCombos(bool value) const {
     settings_->setValue(kKeyAlreadyConvertedRichTextCombos, value);
 }
@@ -1179,46 +934,6 @@ void PreferencesManager::setAlreadyConvertedRichTextCombos(bool value) const {
 //****************************************************************************************************************************************************
 bool PreferencesManager::alreadyConvertedRichTextCombos() const {
     return readSettings<bool>(kKeyAlreadyConvertedRichTextCombos, false);
-}
-
-
-//****************************************************************************************************************************************************
-/// \param[in] value The value for the preference
-//****************************************************************************************************************************************************
-void PreferencesManager::setUseCustomPowershellVersion(bool value) const {
-    settings_->setValue(kKeyUseCustomPowershellVersion, constants::kRestrictedBuild ? false : value);
-}
-
-
-//****************************************************************************************************************************************************
-/// \return The value for the preference.
-//****************************************************************************************************************************************************
-bool PreferencesManager::useCustomPowershellVersion() const {
-    if constexpr (constants::kRestrictedBuild)
-        return false;
-    return readSettings<bool>(kKeyUseCustomPowershellVersion, kDefaultUseCustomPowershellVersion);
-}
-
-
-//****************************************************************************************************************************************************
-/// \param[in] path The path of the PowerShell executable.
-//****************************************************************************************************************************************************
-void PreferencesManager::setCustomPowershellPath(QString const &path) const {
-    if constexpr (constants::kRestrictedBuild) {
-        settings_->remove(kKeyCustomPowershellPath);
-        return;
-    }
-    settings_->setValue(kKeyCustomPowershellPath, path);
-}
-
-
-//****************************************************************************************************************************************************
-/// \return The path of the custom PowerShell executable.
-//****************************************************************************************************************************************************
-QString PreferencesManager::customPowershellPath() const {
-    if constexpr (constants::kRestrictedBuild)
-        return QString();
-    return readSettings<QString>(kKeyCustomPowershellPath, QString());
 }
 
 
@@ -1237,43 +952,3 @@ QByteArray PreferencesManager::comboPickerWindowGeometry() const {
     return readSettings<QByteArray>(kKeyComboPickerWindowGeometry, QByteArray());
 }
 
-
-//****************************************************************************************************************************************************
-/// \param[in] value The value for the preference.
-//****************************************************************************************************************************************************
-void PreferencesManager::setUseShiftInsertForPasting(bool value) const {
-    settings_->setValue(kKeyUseShiftInsertForPasting, value);
-    cache_->useShiftInsertForPasting = value;
-}
-
-
-//****************************************************************************************************************************************************
-/// \return The value for the preference.
-//****************************************************************************************************************************************************
-bool PreferencesManager::useShiftInsertForPasting() const {
-    return cache_->useShiftInsertForPasting;
-}
-
-
-//****************************************************************************************************************************************************
-/// \param[in] versionNumber The version number.
-//****************************************************************************************************************************************************
-void PreferencesManager::setSkipVersionNumber(VersionNumber const &versionNumber) const {
-    settings_->setValue(kKeySkipVersionNumber, versionNumber.toString());
-}
-
-
-//****************************************************************************************************************************************************
-/// \return The value for the 'Skip version number' preference.
-//****************************************************************************************************************************************************
-VersionNumber PreferencesManager::getSkipVersionNumber() const {
-    return VersionNumber::fromString(readSettings<QString>(kKeySkipVersionNumber, QString()));
-}
-
-
-//****************************************************************************************************************************************************
-//
-//****************************************************************************************************************************************************
-void PreferencesManager::removeSkipVersionNumber() const {
-    settings_->remove(kKeySkipVersionNumber);
-}

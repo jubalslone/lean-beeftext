@@ -17,10 +17,7 @@ message(STATUS "Qt dir is ${QT_DIR}")
 set(CMAKE_PREFIX_PATH  ${QT_DIR} ${CMAKE_PREFIX_PATH})
 set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG")
 
-find_package(Qt6Core)
-find_package(Qt6Gui)
-find_package(Qt6Widgets)
-find_package(Qt6Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 
 include_directories("../Submodules/XMiLib")
 include_directories("${CMAKE_CURRENT_BINARY_DIR}") # This causes signals declaration not to be reported as unimplemented, because autogen files are in a subfolder of the build dir.
@@ -31,7 +28,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(POWERSHELL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Scripts/Powershell)
 
-add_compile_options(/wd4068) # disable warning related to unknown #pragma directives. they are used to provide hint to CLion's clangd code analysis, but VS compiler does not know them.
+if(MSVC)
+   add_compile_options(/wd4068) # disable warning related to unknown #pragma directives. they are used to provide hint to CLion's clangd code analysis, but VS compiler does not know them.
+endif()
 add_definitions(-DUNICODE -D_UNICODE)
 
 file(TO_NATIVE_PATH "${POWERSHELL_DIR}/CompileTranslationFiles.ps1" TRANS_SRC_DIR)
@@ -57,8 +56,6 @@ add_executable(Beeftext WIN32
    InputManager.h
    KeyboardMapper.cpp
    KeyboardMapper.h
-   LatestVersionInfo.cpp
-   LatestVersionInfo.h
    main.cpp
    MainWindow.cpp
    MainWindow.h
@@ -72,18 +69,12 @@ add_executable(Beeftext WIN32
    stdafx.h
    Theme.cpp
    Theme.h
-   TLFSafeBuild.cpp
-   TLFSafeBuild.h
+   RestrictedModel.cpp
+   RestrictedModel.h
    WaveSound.cpp
    WaveSound.h
    Backup/BackupManager.cpp
    Backup/BackupManager.h
-   Clipboard/ClipboardManager.cpp
-   Clipboard/ClipboardManager.h
-   Clipboard/ClipboardManagerDefault.cpp
-   Clipboard/ClipboardManagerDefault.h
-   Clipboard/ClipboardManagerLegacy.cpp
-   Clipboard/ClipboardManagerLegacy.h
    Combo/CaseSensitivity.cpp
    Combo/CaseSensitivity.h
    Combo/Combo.cpp
@@ -184,23 +175,6 @@ add_executable(Beeftext WIN32
    Preferences/PreferencesDialog.ui
    Preferences/PreferencesManager.cpp
    Preferences/PreferencesManager.h
-   Snippet/DelaySnippetFragment.cpp
-   Snippet/DelaySnippetFragment.h
-   Snippet/KeySnippetFragment.cpp
-   Snippet/KeySnippetFragment.h
-   Snippet/ShortcutSnippetFragment.cpp
-   Snippet/ShortcutSnippetFragment.h
-   Snippet/SnippetFragment.cpp
-   Snippet/SnippetFragment.h
-   Snippet/TextSnippetFragment.cpp
-   Snippet/TextSnippetFragment.h
-   Update/UpdateCheckWorker.cpp
-   Update/UpdateCheckWorker.h
-   Update/UpdateDialog.cpp
-   Update/UpdateDialog.h
-   Update/UpdateDialog.ui
-   Update/UpdateManager.cpp
-   Update/UpdateManager.h
    Beeftext.qrc
    Beeftext.rc
 )
@@ -211,7 +185,6 @@ target_precompile_headers(Beeftext PRIVATE stdafx.h)
 target_link_libraries(Beeftext Qt6::Core)
 target_link_libraries(Beeftext Qt6::Gui)
 target_link_libraries(Beeftext Qt6::Widgets)
-target_link_libraries(Beeftext Qt6::Network)
 target_link_libraries(Beeftext XMiLib)
 target_link_libraries(Beeftext Winmm)
 target_link_libraries(Beeftext Shell32)
@@ -220,9 +193,9 @@ target_link_libraries(Beeftext Rstrtmgr)
 
 if(BUILD_TESTING)
    add_executable(LeanSecurityModelTests
-      Tests/TLFSafeBuildTests.cpp
-      TLFSafeBuild.cpp
-      TLFSafeBuild.h
+      Tests/RestrictedModelTests.cpp
+      RestrictedModel.cpp
+      RestrictedModel.h
       Combo/ComboPortability.cpp
       Combo/ComboPortability.h
       Migration/LegacyMigrationCore.cpp
@@ -230,6 +203,5 @@ if(BUILD_TESTING)
    )
    target_link_libraries(LeanSecurityModelTests Qt6::Core)
    target_link_libraries(LeanSecurityModelTests XMiLib)
-   target_compile_definitions(LeanSecurityModelTests PRIVATE BEEFTEXT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
    add_test(NAME LeanSecurityModelTests COMMAND LeanSecurityModelTests)
 endif()

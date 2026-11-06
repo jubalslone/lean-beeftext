@@ -20,7 +20,6 @@ namespace globals {
 
 xmilib::DebugLog &debugLog(); ///< Returns a reference to the debug log
 xmilib::DebugLogWindow &debugLogWindow(); ///< Returns a reference to the debug log window.
-ProcessListManager &sensitiveApplications(); ///< Return the list of sensitive applications.
 ProcessListManager &excludedApplications(); ///< Return the list of excluded applications.
 QString getBuildInfo(); ///< Returns a string containing information about the current build.
 QString appDataDir(); ///< Returns the restorable data folder (or portable Data folder).

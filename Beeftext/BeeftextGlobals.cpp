@@ -11,7 +11,6 @@
 #include "BeeftextGlobals.h"
 #include "BeeftextUtils.h"
 #include "BeeftextConstants.h"
-#include "Preferences/PreferencesManager.h"
 #include <XMiLib/Exception.h>
 #ifdef Q_OS_WIN
 #include <ShlObj.h>
@@ -55,14 +54,6 @@ xmilib::SpDebugLog &debugLogSharedPointer() {
 
 
 //****************************************************************************************************************************************************
-/// \return The path of the JSON file containing the list of sensitive applications
-//****************************************************************************************************************************************************
-QString sensitiveApplicationsFilePath() {
-    return QDir(appDataDir()).absoluteFilePath("sensitiveApps.json");
-}
-
-
-//****************************************************************************************************************************************************
 /// \return The path of the JSON file containing the list of excluded applications
 //****************************************************************************************************************************************************
 QString excludedApplicationsFilePath() {
@@ -91,26 +82,6 @@ xmilib::DebugLog &debugLog() {
 xmilib::DebugLogWindow &debugLogWindow() {
     static xmilib::DebugLogWindow window(debugLogSharedPointer());
     return window;
-}
-
-
-//****************************************************************************************************************************************************
-// \return A reference to the list of sensitive applications.
-//****************************************************************************************************************************************************
-ProcessListManager &sensitiveApplications() {
-    static std::unique_ptr<ProcessListManager> manager;
-    if (manager)
-        return *manager;
-
-    manager = std::make_unique<ProcessListManager>(QObject::tr(R"(<html><head/><body><p>Use this dialog
-      to list sensitive applications that do not work correctly with Lean Beeftext because they do not support standard
-      copy-paste using Ctrl+V.</p><p>List applications using their process name (e.g, notepad.exe). Wildcards 
-      are accepted.</p></body></html>)"));
-    manager->setFilePath(sensitiveApplicationsFilePath());
-    if (!manager->load())
-        manager->addProcesses({ "mintty.exe", "putty.exe", "powershell.exe", "kitty*.exe", "ConEmu*.exe" });
-
-    return *manager;
 }
 
 
@@ -322,15 +293,8 @@ QString logFilePath() {
 /// \return The path of the backup folder
 //****************************************************************************************************************************************************
 QString backupFolderPath() {
-    QString defaultPath = defaultBackupFolderPath();
-    if (isInPortableMode() || constants::kRestrictedBuild)
-        return defaultPath;
-
-    PreferencesManager const &prefs = PreferencesManager::instance();
-    if (!prefs.useCustomBackupLocation())
-        return defaultPath;
-    QString const customPath = PreferencesManager::instance().customBackupLocation();
-    return customPath.isEmpty() ? defaultPath : customPath;
+    // Lean Beeftext keeps backups beside the live combo list; there is no custom backup location.
+    return defaultBackupFolderPath();
 }
 
 

@@ -132,21 +132,6 @@ bool ComboManager::saveComboListToFile(QString *outErrorMsg) const {
 
 
 //****************************************************************************************************************************************************
-/// \param[in] backupFilePath The path of the backup file
-/// \return true if the backup was correctly restored
-//****************************************************************************************************************************************************
-bool ComboManager::restoreBackup(QString const &backupFilePath) {
-    bool inOlderFormat = false;
-    QString outErrorMsg;
-    if (!comboList_.load(backupFilePath, &inOlderFormat, &outErrorMsg))
-        return false;
-    comboList_.ensureCorrectGrouping();
-    emit backupWasRestored();
-    return this->saveComboListToFile();
-}
-
-
-//****************************************************************************************************************************************************
 //
 //****************************************************************************************************************************************************
 void ComboManager::loadSoundFromPreferences() {

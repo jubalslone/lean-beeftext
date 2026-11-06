@@ -18,23 +18,14 @@ using namespace xmilib;
 
 
 //****************************************************************************************************************************************************
-/// \return The path of the emoji files
+/// \return The path of the emoji list file.
+///
+/// The emojilib data is compiled into the executable as a Qt resource, so installed and portable builds do not
+/// depend on a file beside the executable or on a development checkout layout.
 //****************************************************************************************************************************************************
 QString emojiFilePath() {
-    QString const fileName = "emojis.json";
-    QDir const appDir(qApp->applicationDirPath());
-    QString filePath = appDir.absoluteFilePath("emojis/" + fileName);
-    if (QFile(filePath).exists())
-        return filePath;
-
-    // we look a few folders above, in case we are in a dev environment
-    for (int i = 0; i < 10; i++) {
-        QFileInfo const fileInfo(QString("../").repeated(i) + QString("Submodules/emojilib/") + fileName);
-        if (fileInfo.exists())
-            return fileInfo.canonicalFilePath();
-    }
-
-    return QString();
+    QString const resourcePath = ":/MainWindow/Resources/emojis.json";
+    return QFile::exists(resourcePath) ? resourcePath : QString();
 }
 
 

@@ -15,15 +15,6 @@
 #include "BeeftextUtils.h"
 
 
-namespace {
-
-
-qint32 kUpdateCheckStatusLabelTimeoutMs = 3000; ///< The delay after which the update check status label is cleared
-
-
-}
-
-
 //****************************************************************************************************************************************************
 /// \param[in] parent The parent widget of the pane.
 //****************************************************************************************************************************************************
@@ -31,41 +22,19 @@ PrefPaneBehavior::PrefPaneBehavior(QWidget *parent)
     : PrefPane(parent)
     , prefs_(PreferencesManager::instance()) {
     ui_.setupUi(this);
-    if (constants::kRestrictedBuild) {
-        ui_.checkAutoCheckForUpdates->setVisible(false);
-        ui_.buttonCheckNow->setVisible(false);
-        ui_.labelUpdateCheckStatus->setVisible(false);
-    }
-    ui_.groupMultilineSnippets->setVisible(constants::kRestrictedBuild);
-    this->updateCheckStatusTimer_.setSingleShot(true);
-    connect(&updateCheckStatusTimer_, &QTimer::timeout, [&]() { ui_.labelUpdateCheckStatus->setText(QString()); });
-    ui_.labelUpdateCheckStatus->setText(QString());
     if (isInPortableMode())
         ui_.checkAutoStart->setVisible(false);
 
-    // signal mappings for the 'Check now' button
-    UpdateManager const &updateManager = UpdateManager::instance();
-
     connect(ui_.buttonChangeAppEnableDisableShortcut, &QPushButton::clicked, this, &PrefPaneBehavior::onChangeAppEnableDisableShortcut);
     connect(ui_.buttonChangeCustomSound, &QPushButton::clicked, this, &PrefPaneBehavior::onChangeCustomSound);
-    connect(ui_.buttonCheckNow, &QPushButton::clicked, &updateManager, &UpdateManager::checkForUpdateWithoutSkipCheck);
     connect(ui_.buttonDefaultAppEnableDisableShortcut, &QPushButton::clicked, this, &PrefPaneBehavior::onResetAppEnableDisableShortcut);
     connect(ui_.buttonPlay, &QPushButton::clicked, this, &PrefPaneBehavior::onPlaySoundButton);
     connect(ui_.checkAppEnableDisable, &QCheckBox::toggled, this, &PrefPaneBehavior::onCheckEnableAppEnableDisableShortcut);
-    connect(ui_.checkAutoCheckForUpdates, &QCheckBox::toggled, this, &PrefPaneBehavior::onCheckAutoCheckForUpdates);
     connect(ui_.checkAutoStart, &QCheckBox::toggled, this, &PrefPaneBehavior::onCheckAutoStart);
     connect(ui_.radioAllowRealLineBreaks, &QRadioButton::toggled, this,
             &PrefPaneBehavior::onAllowRealLineBreaksChanged);
     connect(ui_.checkPlaySoundOnCombo, &QCheckBox::toggled, this, &PrefPaneBehavior::onCheckPlaySoundOnCombo);
     connect(ui_.checkUseCustomSound, &QCheckBox::toggled, this, &PrefPaneBehavior::onCheckUseCustomSound);
-
-
-
-    connect(&updateManager, &UpdateManager::startedUpdateCheck, this, &PrefPaneBehavior::onUpdateCheckStarted);
-    connect(&updateManager, &UpdateManager::finishedUpdateCheck, this, &PrefPaneBehavior::onUpdateCheckFinished);
-    connect(&updateManager, &UpdateManager::updateIsAvailable, this, &PrefPaneBehavior::onUpdateIsAvailable);
-    connect(&updateManager, &UpdateManager::noUpdateIsAvailable, this, &PrefPaneBehavior::onNoUpdateIsAvailable);
-    connect(&updateManager, &UpdateManager::updateCheckFailed, this, &PrefPaneBehavior::onUpdateCheckFailed);
 }
 
 
@@ -73,9 +42,7 @@ PrefPaneBehavior::PrefPaneBehavior(QWidget *parent)
 //
 //****************************************************************************************************************************************************
 void PrefPaneBehavior::load() const {
-    QSignalBlocker blocker(ui_.checkAutoCheckForUpdates);
-    ui_.checkAutoCheckForUpdates->setChecked(constants::kRestrictedBuild ? false : prefs_.autoCheckForUpdates());
-    blocker = QSignalBlocker(ui_.checkAutoStart);
+    QSignalBlocker blocker(ui_.checkAutoStart);
     ui_.checkAutoStart->setChecked(prefs_.autoStartAtLogin());
     QSignalBlocker const allowLineBreaksBlocker(ui_.radioAllowRealLineBreaks);
     QSignalBlocker const visibleLineBreaksBlocker(ui_.radioShowVisibleLineBreaks);
@@ -111,57 +78,6 @@ void PrefPaneBehavior::updateGui() const {
 
 
 //****************************************************************************************************************************************************
-/// \param[in] latestVersionInfo The latest version information
-//****************************************************************************************************************************************************
-void PrefPaneBehavior::onUpdateIsAvailable(SpLatestVersionInfo const &latestVersionInfo) {
-    this->setUpdateCheckStatus(latestVersionInfo ? tr("%1 v%2 is available.").arg(constants::kApplicationName)
-        .arg(latestVersionInfo->versionNumber().toString())
-                                                 : tr("A new version is available."));
-}
-
-
-//****************************************************************************************************************************************************
-// 
-//****************************************************************************************************************************************************
-void PrefPaneBehavior::onNoUpdateIsAvailable() {
-    this->setUpdateCheckStatus(tr("The software is up to date."));
-}
-
-
-//****************************************************************************************************************************************************
-// 
-//****************************************************************************************************************************************************
-void PrefPaneBehavior::onUpdateCheckStarted() const {
-    ui_.buttonCheckNow->setEnabled(false);
-}
-
-
-//****************************************************************************************************************************************************
-// 
-//****************************************************************************************************************************************************
-void PrefPaneBehavior::onUpdateCheckFinished() const {
-    ui_.buttonCheckNow->setEnabled(true);
-}
-
-
-//****************************************************************************************************************************************************
-// 
-//****************************************************************************************************************************************************
-void PrefPaneBehavior::onUpdateCheckFailed() {
-    this->setUpdateCheckStatus(tr("Update check failed."));
-}
-
-
-//****************************************************************************************************************************************************
-/// \param[in] checked Is the radio button checked
-//****************************************************************************************************************************************************
-void PrefPaneBehavior::onCheckAutoCheckForUpdates(bool checked) const {
-    if (!constants::kRestrictedBuild)
-        prefs_.setAutoCheckForUpdates(checked);
-}
-
-
-//****************************************************************************************************************************************************
 /// \param[in] checked Is the radio button checked
 //****************************************************************************************************************************************************
 void PrefPaneBehavior::onCheckAutoStart(bool checked) const {
@@ -174,8 +90,7 @@ void PrefPaneBehavior::onCheckAutoStart(bool checked) const {
 /// \param[in] checked Whether real line breaks are selected.
 //****************************************************************************************************************************************************
 void PrefPaneBehavior::onAllowRealLineBreaksChanged(bool checked) const {
-    if constexpr (constants::kRestrictedBuild)
-        prefs_.setAllowRealLineBreaksInSnippets(checked);
+    prefs_.setAllowRealLineBreaksInSnippets(checked);
 }
 
 
@@ -260,16 +175,6 @@ void PrefPaneBehavior::changeEvent(QEvent *event) {
     if (QEvent::LanguageChange == event->type())
         ui_.retranslateUi(this);
     PrefPane::changeEvent(event);
-}
-
-
-//****************************************************************************************************************************************************
-/// \param[in] status The status message
-//****************************************************************************************************************************************************
-void PrefPaneBehavior::setUpdateCheckStatus(QString const &status) {
-    updateCheckStatusTimer_.stop();
-    ui_.labelUpdateCheckStatus->setText(status);
-    updateCheckStatusTimer_.start(kUpdateCheckStatusLabelTimeoutMs);
 }
 
 

@@ -38,13 +38,11 @@ public: // member functions
     GroupList const &groupListRef() const; ///< Return a constant reference to the group list
     bool loadComboListFromFile(QString *outErrorMsg = nullptr); ///< Load the combo list from the default file
     bool saveComboListToFile(QString *outErrorMsg = nullptr) const; /// Save the combo list to the default location
-    bool restoreBackup(QString const &backupFilePath); /// Restore the combo list from a backup file
     void loadSoundFromPreferences(); ///< Load the combo sound to be played from the preferences
     void playSound() const; ///< Play the combo substitution sound.
 signals:
     void comboListWasLoaded() const; ///< Signal emitted when the combo list has been loaded
     void comboListWasSaved() const;  ///< Signal emitted when the combo list has been saved
-    void backupWasRestored() const; ///< Signal emitted when a backup has been restored
 
 private: // member functions
     ComboManager(); ///< Default constructor
@@ -66,4 +64,4 @@ private: // data member
 };
 
 
-#endif // #ifndef BEEFTEXT_COMBO_MANAGER_H
+#endif // #ifndef BEEFTEXT_COMBO_MANAGER_H
