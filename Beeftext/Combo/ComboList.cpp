@@ -108,8 +108,10 @@ ComboList &ComboList::operator=(ComboList const &ref) {
 //****************************************************************************************************************************************************
 ComboList &ComboList::operator=(ComboList &&ref) noexcept {
     if (&ref != this) {
+        beginResetModel();
         combos_ = std::move(ref.combos_);
         groups_ = std::move(ref.groups_);
+        endResetModel();
     }
     return *this;
 }
@@ -394,7 +396,7 @@ QJsonDocument ComboList::toJsonDocument(bool includeGroups) const {
 //****************************************************************************************************************************************************
 bool ComboList::readFromJsonDocument(QJsonDocument const &doc, bool *outInOlderFileFormat, QString *outErrorMsg) {
     try {
-        this->clear();
+        ComboList parsed;
         if (!doc.isObject())
             throw Exception("The combo list file is invalid.");
         QJsonObject const rootObject = doc.object();
@@ -413,7 +415,7 @@ bool ComboList::readFromJsonDocument(QJsonDocument const &doc, bool *outInOlderF
             if (!groupListValue.isArray())
                 throw Exception("The list of groups is not a valid array");
             QString errorMsg;
-            if (!groups_.readFromJsonArray(groupListValue.toArray(), version, &errorMsg))
+            if (!parsed.groups_.readFromJsonArray(groupListValue.toArray(), version, &errorMsg))
                 throw Exception(errorMsg);
         }
 
@@ -424,11 +426,13 @@ bool ComboList::readFromJsonDocument(QJsonDocument const &doc, bool *outInOlderF
         for (QJsonValueRef const comboValue: combosListValue.toArray()) {
             if (!comboValue.isObject())
                 throw Exception("The combo list array contains an invalid combo.");
-            SpCombo const combo = Combo::create(comboValue.toObject(), version, groups_);
+            SpCombo const combo = Combo::create(comboValue.toObject(), version, parsed.groups_);
             if ((!combo) || (!combo->isValid()))
                 throw Exception("One of the combo in the list is invalid");
-            this->append(combo);
+            if (!parsed.append(combo))
+                throw Exception("The combo list contains a duplicate combo identifier.");
         }
+        *this = std::move(parsed);
         if (outInOlderFileFormat)
             *outInOlderFileFormat = (version < fileFormatVersionNumber);
         return true;
@@ -451,11 +455,13 @@ bool ComboList::readFromJsonDocument(QJsonDocument const &doc, bool *outInOlderF
 //****************************************************************************************************************************************************
 bool ComboList::load(QString const &path, bool *outInOlderFileFormat, QString *outErrorMessage) {
     try {
-        this->clear();
         QFile file(path);
         if ((!file.exists()) || (!file.open(QIODevice::ReadOnly)))
             throw Exception(QString("Could not open file for reading: '%1'").arg(QDir::toNativeSeparators(path)));
-        return this->readFromJsonDocument(QJsonDocument::fromJson(file.readAll()), outInOlderFileFormat, outErrorMessage);
+        QByteArray const data = file.readAll();
+        if (file.error() != QFileDevice::NoError)
+            throw Exception(file.errorString());
+        return this->readFromJsonDocument(QJsonDocument::fromJson(data), outInOlderFileFormat, outErrorMessage);
     }
     catch (Exception const &e) {
         if (outErrorMessage)

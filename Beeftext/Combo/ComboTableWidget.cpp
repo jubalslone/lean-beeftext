@@ -98,8 +98,16 @@ void ComboTableWidget::setGroupListWidget(GroupListWidget *groupListWidget) {
 /// \param[in] filePath The path of the combo file to import. This value can be null
 //****************************************************************************************************************************************************
 void ComboTableWidget::runComboImportDialog(QString const &filePath) {
-    if (QDialog::Accepted == ComboImportDialog(filePath, (groupListWidget_ ? groupListWidget_->selectedGroup() : SpGroup()), this).exec())
-        this->updateGui();
+    SpGroup const selectedGroup = groupListWidget_ ? groupListWidget_->selectedGroup() : nullptr;
+    if (ComboImportDialog(filePath, selectedGroup, this).exec() != QDialog::Accepted)
+        return;
+    if (groupListWidget_) {
+        if (selectedGroup)
+            groupListWidget_->selectGroup(selectedGroup);
+        else
+            groupListWidget_->selectAllCombosEntry();
+    }
+    this->updateGui();
 }
 
 
@@ -415,7 +423,7 @@ void ComboTableWidget::onActionNewCombo() {
 
         if (!ComboDialog::run(combo, tr("New Combo")))
             return;
-        ComboManager const &comboManager = ComboManager::instance();
+        ComboManager &comboManager = ComboManager::instance();
         ComboList &comboList = ComboManager::instance().comboListRef();
         if (!comboList.append(combo))
             throw xmilib::Exception(tr("The combo could not be added to the list."));

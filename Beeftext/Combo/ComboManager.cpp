@@ -57,15 +57,6 @@ ComboManager::ComboManager() {
     connect(&inputManager, &InputManager::characterTyped, this, &ComboManager::onCharacterTyped, Qt::QueuedConnection);
     connect(&inputManager, &InputManager::backspaceTyped, this, &ComboManager::onBackspaceTyped, Qt::QueuedConnection);
     connect(&inputManager, &InputManager::substitutionShortcutTriggered, this, &ComboManager::onSubstitutionTriggerShortcut, Qt::QueuedConnection);
-    QString errMsg;
-
-    if (QFileInfo(QDir(PreferencesManager::instance().comboListFolderPath())
-        .absoluteFilePath(ComboList::defaultFileName)).exists()) // we avoid displaying an error on first launch
-    {
-        if (!this->loadComboListFromFile(&errMsg))
-            QMessageBox::critical(nullptr, tr("Error"), errMsg);
-    } else
-        comboList_.ensureCorrectGrouping();
     this->loadSoundFromPreferences();
 }
 
@@ -91,12 +82,14 @@ GroupList const &ComboManager::groupListRef() const {
 /// of the error.
 //****************************************************************************************************************************************************
 bool ComboManager::loadComboListFromFile(QString *outErrorMsg) {
-    BackupManager::instance().cleanup();
     bool inOlderFormat = false;
     QString const &path = QDir(PreferencesManager::instance().comboListFolderPath())
         .absoluteFilePath(ComboList::defaultFileName);
-    if (!comboList_.load(path, &inOlderFormat, outErrorMsg))
+    if (!libraryFile_.open(path, comboList_, inOlderFormat, outErrorMsg))
         return false;
+    if (libraryFile_.isNew())
+        return true;
+    BackupManager::instance().cleanup();
     bool wasInvalid = false;
     comboList_.ensureCorrectGrouping(&wasInvalid);
     if (inOlderFormat || wasInvalid) {
@@ -119,15 +112,25 @@ bool ComboManager::loadComboListFromFile(QString *outErrorMsg) {
 /// of the error.
 /// \return true if and only if the operation completed successfully
 //****************************************************************************************************************************************************
-bool ComboManager::saveComboListToFile(QString *outErrorMsg) const {
+bool ComboManager::saveComboListToFile(QString *outErrorMsg) {
     PreferencesManager const &prefs = PreferencesManager::instance();
     QString const filePath = QDir(prefs.comboListFolderPath()).absoluteFilePath(ComboList::defaultFileName);
-    if (prefs.autoBackup())
-        BackupManager::instance().archive(filePath);
-    bool const result = comboList_.save(filePath, true, outErrorMsg);
+    bool const result = libraryFile_.save(filePath, comboList_, prefs.autoBackup(), outErrorMsg);
     if (result)
         emit comboListWasSaved();
     return result;
+}
+
+
+bool ComboManager::importCombos(QList<SpCombo> const &additions, QList<SpCombo> const &replacements,
+	GroupList const *importedGroups, SpGroup const &destinationGroup, QString *error) {
+	PreferencesManager const &prefs = PreferencesManager::instance();
+	QString const path = QDir(prefs.comboListFolderPath()).absoluteFilePath(ComboList::defaultFileName);
+	if (!libraryFile_.importCombos(path, comboList_, additions, replacements, importedGroups, destinationGroup,
+		prefs.autoBackup(), error))
+		return false;
+	emit comboListWasSaved();
+	return true;
 }
 
 
@@ -138,11 +141,18 @@ bool ComboManager::saveComboListToFile(QString *outErrorMsg) const {
 bool ComboManager::restoreBackup(QString const &backupFilePath) {
     bool inOlderFormat = false;
     QString outErrorMsg;
-    if (!comboList_.load(backupFilePath, &inOlderFormat, &outErrorMsg))
+    ComboList restored;
+    if (!restored.load(backupFilePath, &inOlderFormat, &outErrorMsg))
         return false;
-    comboList_.ensureCorrectGrouping();
+    restored.ensureCorrectGrouping();
+    PreferencesManager const &prefs = PreferencesManager::instance();
+    QString const path = QDir(prefs.comboListFolderPath()).absoluteFilePath(ComboList::defaultFileName);
+    if (!libraryFile_.save(path, restored, prefs.autoBackup(), &outErrorMsg))
+        return false;
+    comboList_ = std::move(restored);
     emit backupWasRestored();
-    return this->saveComboListToFile();
+    emit comboListWasSaved();
+    return true;
 }
 
 

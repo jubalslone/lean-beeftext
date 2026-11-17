@@ -103,6 +103,8 @@ add_executable(Beeftext WIN32
    Combo/ComboImportDialog.ui
    Combo/ComboKeywordValidator.cpp
    Combo/ComboKeywordValidator.h
+   Combo/ComboLibraryFile.cpp
+   Combo/ComboLibraryFile.h
    Combo/ComboList.cpp
    Combo/ComboList.h
    Combo/ComboManager.cpp
@@ -252,5 +254,6 @@ if(BUILD_TESTING)
       target_link_libraries(${name} PRIVATE LeanTestAppObjects)
       add_test(NAME ${name} COMMAND ${name})
    endfunction()
+   add_lean_app_test(ComboLibraryTests)
    add_lean_app_test(DateTimeFormatTests)
 endif()

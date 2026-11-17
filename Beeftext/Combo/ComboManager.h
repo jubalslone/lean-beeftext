@@ -11,7 +11,7 @@
 #define BEEFTEXT_COMBO_MANAGER_H
 
 
-#include "ComboList.h"
+#include "ComboLibraryFile.h"
 #include "Group/GroupList.h"
 #include "WaveSound.h"
 #include <XMiLib/RandomNumberGenerator.h>
@@ -37,7 +37,9 @@ public: // member functions
     GroupList &groupListRef(); ///< Return a mutable reference to the group list
     GroupList const &groupListRef() const; ///< Return a constant reference to the group list
     bool loadComboListFromFile(QString *outErrorMsg = nullptr); ///< Load the combo list from the default file
-    bool saveComboListToFile(QString *outErrorMsg = nullptr) const; /// Save the combo list to the default location
+    bool saveComboListToFile(QString *outErrorMsg = nullptr); /// Save the combo list to the default location
+    bool importCombos(QList<SpCombo> const &additions, QList<SpCombo> const &replacements,
+        GroupList const *importedGroups, SpGroup const &destinationGroup, QString *error);
     bool restoreBackup(QString const &backupFilePath); /// Restore the combo list from a backup file
     void loadSoundFromPreferences(); ///< Load the combo sound to be played from the preferences
     void playSound() const; ///< Play the combo substitution sound.
@@ -60,6 +62,7 @@ private slots:
 
 private: // data member
     QString currentText_; ///< The current string
+    ComboLibraryFile libraryFile_;
     ComboList comboList_; ///< The list of combos
     std::unique_ptr<WaveSound> sound_; ///< The sound to play when a combo is executed
     xmilib::RandomNumberGenerator rng_; ///< The RNG used to pick combos when multiple occurences are found

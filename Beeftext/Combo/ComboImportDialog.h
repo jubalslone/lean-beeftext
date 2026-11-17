@@ -42,7 +42,6 @@ protected: // member functions
 private: // data members
     void updateGui() const; ///< Update the GUI state
     qint32 computeTotalImportCount() const; ///< Return the number of combos to be imported according to the user selection in the dialog
-    void performFinalImport(qint32 &outFailureCount); ///< Perform the final import of combos
 
 private slots:
     void onImport(); ///< Slot for the 'Import' action
@@ -54,9 +53,9 @@ private slots:
 private: // data members
     Ui::ComboImportDialog ui_; ///< The GUI for the dialog
     QString currentError_; ///< The current error message being displayed.
-    ComboList importableCombos_; ///< The list of combos that can be imported as is
-    ComboList conflictingNewerCombos_; ///< The list of conflicting combos with a newer modification date than the current one
-    ComboList conflictingOlderCombos_; ///< The list of conflicting combos with an older modification date than the current one
+    QList<SpCombo> importableCombos_; ///< The list of combos that can be imported as is
+    QList<SpCombo> conflictingNewerCombos_; ///< The list of conflicting combos with a newer modification date than the current one
+    QList<SpCombo> conflictingOlderCombos_; ///< The list of conflicting combos with an older modification date than the current one
 	GroupList importedGroups_; ///< Groups carried by a Lean combo bundle.
 	bool preserveImportedGroups_ { false }; ///< Whether imported Lean group membership should be preserved.
 };

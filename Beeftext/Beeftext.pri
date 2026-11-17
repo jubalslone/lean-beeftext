@@ -22,6 +22,7 @@ HEADERS += ./BeeftextConstants.h \
     ./Combo/ComboSortFilterProxyModel.h \
     ./Combo/ComboImportDialog.h \
     ./Combo/ComboExportDialog.h \
+    ./Combo/ComboLibraryFile.h \
     ./Combo/ComboPortability.h \
     ./Combo/ComboFrame.h \
     ./Combo/ComboTableWidget.h \
@@ -57,6 +58,7 @@ SOURCES += ./AboutDialog.cpp \
     ./Combo/ComboFrame.cpp \
     ./Combo/ComboImportDialog.cpp \
     ./Combo/ComboExportDialog.cpp \
+    ./Combo/ComboLibraryFile.cpp \
     ./Combo/ComboPortability.cpp \
     ./Combo/ComboList.cpp \
     ./Combo/ComboManager.cpp \

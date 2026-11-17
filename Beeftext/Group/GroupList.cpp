@@ -82,8 +82,10 @@ GroupList &GroupList::operator=(GroupList const &ref) {
 //****************************************************************************************************************************************************
 GroupList &GroupList::operator=(GroupList &&ref) noexcept {
     if (&ref != this) {
+        beginResetModel();
         groups_ = std::move(ref.groups_);
         dropType_ = ref.dropType_;
+        endResetModel();
     }
     return *this;
 }

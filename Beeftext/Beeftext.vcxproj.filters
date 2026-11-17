@@ -90,6 +90,9 @@
     <ClCompile Include="Combo\ComboExportDialog.cpp">
       <Filter>Combo</Filter>
     </ClCompile>
+    <ClCompile Include="Combo\ComboLibraryFile.cpp">
+      <Filter>Combo</Filter>
+    </ClCompile>
     <ClCompile Include="Combo\ComboPortability.cpp">
       <Filter>Combo</Filter>
     </ClCompile>
@@ -337,6 +340,9 @@
     <QtMoc Include="Combo\ComboExportDialog.h">
       <Filter>Combo</Filter>
     </QtMoc>
+    <ClInclude Include="Combo\ComboLibraryFile.h">
+      <Filter>Combo</Filter>
+    </ClInclude>
     <ClInclude Include="Combo\ComboPortability.h">
       <Filter>Combo</Filter>
     </ClInclude>

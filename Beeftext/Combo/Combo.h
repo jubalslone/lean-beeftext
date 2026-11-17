@@ -36,7 +36,6 @@ public: // member functions
     Combo(QString name, QString keyword, QString snippet, QString description, EMatchingMode matchingMode,
         ECaseSensitivity caseSensitivity, bool enabled); ///< Default constructor
     Combo(QJsonObject const &object, qint32 formatVersion, GroupList const &groups = GroupList()); ///< Constructor from JSon object
-    Combo(Combo const &) = delete; ///< Disabled copy constructor
     Combo(Combo &&) = delete; ///< Disabled move constructor
     ~Combo() = default; ///< Default destructor
     Combo &operator=(Combo const &) = delete; ///< Disabled assignment operator
@@ -72,6 +71,7 @@ public: // member functions
     bool matchesForInput(QString const &input) const; ///< Check if the combo is a match for the given input
     bool performSubstitution(bool triggeredByPicker); ///< Perform the combo substitution
     QJsonObject toJsonObject(bool includeGroup) const; ///< Serialize the combo in a JSon object
+    SpCombo copyForImport(SpGroup const &group) const; ///< Independent import row retaining its identity.
     void changeUuid(); ///< Get a new Uuid for the combo
 
 public: // static functions
@@ -84,6 +84,7 @@ public: // static functions
     static SpCombo duplicate(Combo const &combo); ///< Duplicate
 
 private: // member functions
+    Combo(Combo const &) = default;
     void touch(); ///< set the modification date/time to now
 
 private: // data member

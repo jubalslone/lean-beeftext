@@ -286,6 +286,7 @@
     <ClCompile Include="Combo\ComboImportDialog.cpp" />
     <ClCompile Include="Combo\ComboList.cpp" />
     <ClCompile Include="Combo\ComboManager.cpp" />
+    <ClCompile Include="Combo\ComboLibraryFile.cpp" />
     <ClCompile Include="Combo\ComboPortability.cpp" />
     <ClCompile Include="Combo\ComboSortFilterProxyModel.cpp" />
     <ClCompile Include="Combo\ComboKeywordValidator.cpp" />
@@ -446,6 +447,7 @@
       <ForceInclude Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h;../../Combo/%(Filename)%(Extension)</ForceInclude>
     </QtMoc>
     <ClInclude Include="Combo\ComboKeywordValidator.h" />
+    <ClInclude Include="Combo\ComboLibraryFile.h" />
     <ClInclude Include="Combo\ComboPortability.h" />
     <ClInclude Include="Combo\ComboVariable.h" />
     <QtMoc Include="MainWindow.h">
