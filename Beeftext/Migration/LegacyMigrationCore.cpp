@@ -11,6 +11,12 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonParseError>
+#include <filesystem>
+#ifdef Q_OS_WIN
+#include <windows.h>
+#else
+#include <sys/stat.h>
+#endif
 
 
 namespace migration {
@@ -27,6 +33,44 @@ QString normalizedPath(QString const &path) {
     if (result.isEmpty())
         result = info.absoluteFilePath();
     return QDir::cleanPath(QDir::fromNativeSeparators(result)).toCaseFolded();
+}
+
+
+namespace fs = std::filesystem;
+
+bool containsPath(QString const &root, QString const &path) {
+	return root == path || path.startsWith(root.endsWith('/') ? root : root + '/');
+}
+
+
+// Resolve the existing parent even when the first-run data or recovery folder does not exist yet.
+QString resolvedCleanupPath(QString const &path) {
+	std::error_code error;
+	auto const resolved = fs::weakly_canonical(QFileInfo(path).filesystemAbsoluteFilePath(), error);
+	return error ? QString() : QString::fromStdU16String(resolved.generic_u16string()).toCaseFolded();
+}
+
+
+bool canTraverseForCleanup(fs::path const &path) {
+#ifdef Q_OS_WIN
+	DWORD const attributes = GetFileAttributesW(path.c_str());
+	if (attributes == INVALID_FILE_ATTRIBUTES)
+		return false;
+	if (!(attributes & FILE_ATTRIBUTE_REPARSE_POINT))
+		return true;
+
+	// Cloud placeholders can be reparse points without redirecting to another named file.
+	WIN32_FIND_DATAW data {};
+	HANDLE const handle = FindFirstFileW(path.c_str(), &data);
+	if (handle == INVALID_HANDLE_VALUE)
+		return false;
+	FindClose(handle);
+	return !IsReparseTagNameSurrogate(data.dwReserved0);
+#else
+	std::error_code error;
+	auto const status = fs::symlink_status(path, error);
+	return !error && fs::exists(status) && !fs::is_symlink(status);
+#endif
 }
 
 
@@ -74,24 +118,92 @@ bool isStrongPortableCandidate(QString const &executableFolder, QString *outComb
     if (outComboFilePath)
         *outComboFilePath = QFileInfo(comboPath).absoluteFilePath();
     if (outDedicatedRootPath)
-        *outDedicatedRootPath = QFileInfo(rootPath).absoluteFilePath();
+        *outDedicatedRootPath = QDir::cleanPath(QFileInfo(rootPath).absoluteFilePath());
     if (outProduct)
         *outProduct = product;
     return true;
 }
 
 
-bool isBroadCleanupRoot(QString const &candidateRoot, QStringList const &protectedRoots) {
-    QString const candidate = normalizedPath(candidateRoot);
-    if (candidate.isEmpty())
-        return true;
-    QDir const candidateDir(candidateRoot);
-    if (candidateDir.isRoot())
-        return true;
-    for (QString const &root: protectedRoots)
-        if (!root.isEmpty() && candidate == normalizedPath(root))
-            return true;
-    return false;
+bool isBroadCleanupRoot(QString const &candidatePath, QStringList const &sharedRoots, QStringList const &protectedTrees) {
+	if (!QDir::isAbsolutePath(candidatePath) || !QFileInfo::exists(candidatePath) || QDir(candidatePath).isRoot())
+		return true;
+
+	auto path = QFileInfo(candidatePath).filesystemAbsoluteFilePath().lexically_normal();
+	for (;;) {
+		if (!canTraverseForCleanup(path))
+			return true;
+		if (path == path.root_path())
+			break;
+		path = path.parent_path();
+	}
+
+	QString const candidate = resolvedCleanupPath(candidatePath);
+	QString const lexical = QDir::cleanPath(QDir::fromNativeSeparators(candidatePath)).toCaseFolded();
+	if (candidate.isEmpty())
+		return true;
+	auto overlaps = [&](QString const &root, bool protectDescendants) {
+		QString const original = QDir::cleanPath(QDir::fromNativeSeparators(root)).toCaseFolded();
+		QString const resolved = resolvedCleanupPath(root);
+		if (containsPath(lexical, original) || (protectDescendants && containsPath(original, lexical)))
+			return true;
+		if (resolved.isEmpty())
+			return protectDescendants;
+		return containsPath(candidate, resolved) || (protectDescendants && containsPath(resolved, candidate));
+	};
+	for (QString const &root: sharedRoots)
+		if (!root.isEmpty() && overlaps(root, false))
+			return true;
+	for (QString const &tree: protectedTrees)
+		if (!QDir::isAbsolutePath(tree) || overlaps(tree, true))
+			return true;
+	return false;
+}
+
+
+QByteArray portableDirectoryIdentity(QString const &path) {
+	QFileInfo const info(path);
+	if (!info.isAbsolute() || !info.isDir())
+		return {};
+#ifdef Q_OS_WIN
+	auto const native = info.filesystemAbsoluteFilePath();
+	HANDLE const handle = CreateFileW(native.c_str(), FILE_READ_ATTRIBUTES,
+		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
+		FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, nullptr);
+	if (handle == INVALID_HANDLE_VALUE)
+		return {};
+	FILE_ID_INFO id {};
+	bool const available = GetFileInformationByHandleEx(handle, FileIdInfo, &id, sizeof(id)) != FALSE;
+	CloseHandle(handle);
+	QByteArray const fileId(reinterpret_cast<char const *>(id.FileId.Identifier), sizeof(id.FileId.Identifier));
+	if (!available || fileId == QByteArray(fileId.size(), '\0'))
+		return {};
+	return QByteArray::number(id.VolumeSerialNumber, 16) + ':' + fileId.toHex();
+#else
+	struct stat entry {};
+	if (::lstat(QFile::encodeName(path).constData(), &entry) != 0 || !S_ISDIR(entry.st_mode))
+		return {};
+	return QByteArray::number(qulonglong(entry.st_dev), 16) + ':' + QByteArray::number(qulonglong(entry.st_ino), 16);
+#endif
+}
+
+
+bool portableDirectoryMatches(QString const &path, QByteArray const &recordedIdentity) {
+	return !recordedIdentity.isEmpty() && portableDirectoryIdentity(path) == recordedIdentity;
+}
+
+
+bool canRecyclePortableTree(QString const &rootPath) {
+	auto const root = QFileInfo(rootPath).filesystemAbsoluteFilePath();
+	if (!canTraverseForCleanup(root))
+		return false;
+	std::error_code error;
+	for (fs::recursive_directory_iterator it(root, error), end; !error && it != end; it.increment(error)) {
+		// Inspect each entry before descending. Never follow links out of the selected portable tree.
+		if (!canTraverseForCleanup(it->path()))
+			return false;
+	}
+	return !error;
 }
 
 
@@ -131,7 +243,7 @@ QList<QList<qsizetype>> groupSourcesByContent(QList<QByteArray> const &digests) 
         auto const existing = groupByDigest.constFind(digests[i]);
         if (existing == groupByDigest.constEnd()) {
             groupByDigest.insert(digests[i], result.size());
-            result.append({ i });
+            result.append(QList<qsizetype>{ i });
         } else {
             result[*existing].append(i);
         }

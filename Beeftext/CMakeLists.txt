@@ -155,6 +155,7 @@ add_executable(Beeftext WIN32
    Migration/LegacyMigrationCore.h
    Migration/LegacyMigrationManager.cpp
    Migration/LegacyMigrationManager.h
+   Migration/LegacyMigrationDialogChoice.h
    Picker/PickerItemDelegate.cpp
    Picker/PickerItemDelegate.h
    Picker/PickerModel.cpp
@@ -235,6 +236,10 @@ if(BUILD_TESTING)
    target_link_libraries(LeanSecurityModelTests XMiLib)
    target_compile_definitions(LeanSecurityModelTests PRIVATE BEEFTEXT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
    add_test(NAME LeanSecurityModelTests COMMAND LeanSecurityModelTests)
+
+   add_executable(PortableMigrationCleanupTests Tests/PortableMigrationCleanupTests.cpp Migration/LegacyMigrationCore.cpp)
+   target_link_libraries(PortableMigrationCleanupTests PRIVATE Qt6::Widgets)
+   add_test(NAME PortableMigrationCleanupTests COMMAND PortableMigrationCleanupTests)
 
    # Integration tests call the real models/dialogs with temporary profiles. The
    # application entry point starts system hooks and must never run in a fixture.

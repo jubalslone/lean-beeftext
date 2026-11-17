@@ -28,6 +28,7 @@ HEADERS += ./BeeftextConstants.h \
     ./Combo/ComboFrame.h \
     ./Combo/ComboTableWidget.h \
     ./Migration/LegacyMigrationCore.h \
+    ./Migration/LegacyMigrationDialogChoice.h \
     ./Migration/LegacyMigrationManager.h \
     ./Update/UpdateCheckWorker.h \
     ./Update/UpdateManager.h \

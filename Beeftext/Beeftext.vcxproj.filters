@@ -261,6 +261,7 @@
     </ClInclude>
     <ClInclude Include="WaveSound.h" />
     <ClInclude Include="Migration\LegacyMigrationCore.h" />
+    <ClInclude Include="Migration\LegacyMigrationDialogChoice.h" />
     <ClInclude Include="Migration\LegacyMigrationManager.h" />
     <ClInclude Include="Combo\CaseSensitivity.h">
       <Filter>Combo</Filter>
