@@ -43,7 +43,11 @@ struct ValidationResult {
 
 bool isStrongPortableCandidate(QString const &executableFolder, QString *outComboFilePath = nullptr,
     QString *outDedicatedRootPath = nullptr, EPortableProduct *outProduct = nullptr); ///< Require a beacon, expected data layout, one recognized executable, and readable combo data.
-bool isBroadCleanupRoot(QString const &candidateRoot, QStringList const &protectedRoots); ///< Refuse shared/general-purpose roots.
+bool isBroadCleanupRoot(QString const &candidatePath, QStringList const &sharedRoots,
+	QStringList const &protectedTrees = {}); ///< Allow dedicated children of shared roots, but forbid any overlap with protected trees.
+QByteArray portableDirectoryIdentity(QString const &path); ///< Stable filesystem identity of the selected directory.
+bool portableDirectoryMatches(QString const &path, QByteArray const &recordedIdentity);
+bool canRecyclePortableTree(QString const &rootPath); ///< Refuse unreadable trees or links that redirect filesystem traversal.
 bool isRecognizableInstalledCandidate(QString const &displayName, QString const &publisher,
 	QString const &installLocation, QString const &executablePath); ///< Identify upstream without granting cleanup permission.
 QByteArray sourceContentDigest(QByteArray const &contents); ///< Compute the digest that binds source refresh, snapshot, import, and cleanup.

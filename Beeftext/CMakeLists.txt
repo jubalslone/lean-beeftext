@@ -51,6 +51,7 @@ add_executable(Beeftext WIN32
    BeeftextGlobals.h
    BeeftextUtils.cpp
    BeeftextUtils.h
+   SubstitutionTarget.h
    I18nManager.cpp
    I18nManager.h
    InputManager.cpp
@@ -103,6 +104,8 @@ add_executable(Beeftext WIN32
    Combo/ComboImportDialog.ui
    Combo/ComboKeywordValidator.cpp
    Combo/ComboKeywordValidator.h
+   Combo/ComboLibraryFile.cpp
+   Combo/ComboLibraryFile.h
    Combo/ComboList.cpp
    Combo/ComboList.h
    Combo/ComboManager.cpp
@@ -152,6 +155,7 @@ add_executable(Beeftext WIN32
    Migration/LegacyMigrationCore.h
    Migration/LegacyMigrationManager.cpp
    Migration/LegacyMigrationManager.h
+   Migration/LegacyMigrationDialogChoice.h
    Picker/PickerItemDelegate.cpp
    Picker/PickerItemDelegate.h
    Picker/PickerModel.cpp
@@ -232,4 +236,31 @@ if(BUILD_TESTING)
    target_link_libraries(LeanSecurityModelTests XMiLib)
    target_compile_definitions(LeanSecurityModelTests PRIVATE BEEFTEXT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
    add_test(NAME LeanSecurityModelTests COMMAND LeanSecurityModelTests)
+
+   add_executable(PortableMigrationCleanupTests Tests/PortableMigrationCleanupTests.cpp Migration/LegacyMigrationCore.cpp)
+   target_link_libraries(PortableMigrationCleanupTests PRIVATE Qt6::Widgets)
+   add_test(NAME PortableMigrationCleanupTests COMMAND PortableMigrationCleanupTests)
+
+   # Integration tests call the real models/dialogs with temporary profiles. The
+   # application entry point starts system hooks and must never run in a fixture.
+   get_target_property(appTestSources Beeftext SOURCES)
+   list(REMOVE_ITEM appTestSources main.cpp Beeftext.rc Beeftext.qrc)
+   add_library(LeanTestApp STATIC ${appTestSources})
+   target_precompile_headers(LeanTestApp PRIVATE stdafx.h)
+   target_link_libraries(LeanTestApp PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network XMiLib Winmm Shell32 Ole32 Rstrtmgr)
+   if(CMAKE_CONFIGURATION_TYPES)
+      target_include_directories(LeanTestApp INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/LeanTestApp_autogen/include_$<CONFIG>")
+   else()
+      target_include_directories(LeanTestApp INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/LeanTestApp_autogen/include")
+   endif()
+
+   function(add_lean_app_test name)
+      add_executable(${name} Tests/${name}.cpp)
+      set_target_properties(${name} PROPERTIES AUTOMOC OFF AUTOUIC OFF)
+      target_link_libraries(${name} PRIVATE LeanTestApp)
+      add_test(NAME ${name} COMMAND ${name})
+   endfunction()
+   add_lean_app_test(ComboLibraryTests)
+   add_lean_app_test(SubstitutionTargetTests)
+   add_lean_app_test(DateTimeFormatTests)
 endif()

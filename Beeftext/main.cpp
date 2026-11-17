@@ -102,7 +102,15 @@ int main(int argc, char *argv[]) {
         prefs.setAlreadyConvertedRichTextCombos(true);
 
 
-        ComboManager &comboManager = ComboManager::instance(); // we make sure the combo manager singleton is instanciated
+        ComboManager &comboManager = ComboManager::instance();
+        QString libraryError;
+        if (!comboManager.loadComboListFromFile(&libraryError)) {
+            QString const libraryPath = QDir(prefs.comboListFolderPath()).absoluteFilePath(ComboList::defaultFileName);
+            QMessageBox::critical(nullptr, QObject::tr("Cannot open the combo library"),
+                QObject::tr("%1\n\n%2\n\nRestore access to the library or a known-good copy, then restart Lean Beeftext.")
+                    .arg(QDir::toNativeSeparators(libraryPath), libraryError));
+            return 1;
+        }
         (void) UpdateManager::instance(); // we make sure the update manager singleton is instanciated
         EmojiManager &emojiManager = EmojiManager::instance();
         if (prefs.emojiShortcodesEnabled())

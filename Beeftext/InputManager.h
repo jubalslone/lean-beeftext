@@ -12,6 +12,7 @@
 
 
 #include "Shortcut.h"
+#include "SubstitutionTarget.h"
 
 
 //****************************************************************************************************************************************************
@@ -42,20 +43,20 @@ public: // member functions
     bool isShortcutProcessingEnabled() const; ///< Check whether shortcut processing is enabled.
 
 signals:
-    void shortcutPressed(SpShortcut const &shortcut); ///< shortcut for the typing of a key combination.
+    void shortcutPressed(SpShortcut const &shortcut, SubstitutionTarget target); ///< shortcut for the typing of a key combination.
     void comboBreakerTyped(); ///< Signal for combo breaking events
-    void characterTyped(QChar c); ///< Signal for character typed
-    void backspaceTyped(); ///< Signal for backspace typed
-    void substitutionShortcutTriggered();  ///< Signal emitted when the manual substitution shortcut is triggered
+    void characterTyped(QChar c, SubstitutionTarget target); ///< Signal for character typed
+    void backspaceTyped(SubstitutionTarget target); ///< Signal for backspace typed
+    void substitutionShortcutTriggered(SubstitutionTarget target);  ///< Signal emitted when the manual substitution shortcut is triggered
     void comboMenuShortcutTriggered(); ///< Signal emitted when the combo menu shortcut is triggered.
     void appEnableDisableShortcutTriggered(); ///< Signal emitted when the app enable/disable shortcut has been triggered.
 
 private slots:
-    void onShortcut(SpShortcut const &shortcut); ///< Slot for shortcuts
+    void onShortcut(SpShortcut const &shortcut, SubstitutionTarget target); ///< Slot for shortcuts
 
 private: // member functions
     InputManager(); ///< Default constructor
-    bool onKeyboardEvent(KeyStroke const &keyStroke); ///< The callback function called at every key event
+    bool onKeyboardEvent(KeyStroke const &keyStroke, SubstitutionTarget target); ///< The callback function called at every key event
     QString processKey(KeyStroke const &keyStroke, bool &outIsDeadKey); ///< Process a ky stroke and return the generated characters
     static QString processKeyModern(KeyStroke const &keyStroke); ///< Process a key stroke and return the generated characters
     QString processKeyLegacy(KeyStroke const &keyStroke, bool &outIsDeadKey); ///< Process a key stroke and return the generated characters

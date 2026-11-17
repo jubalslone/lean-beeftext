@@ -91,8 +91,7 @@ bool isDesktop(HWND hwnd) {
 /// \return A rect indicating the position and size of the foreground window. if no windows is on the foreground,
 /// the available area of the desktop for monitor the mouse in on is returned.
 //****************************************************************************************************************************************************
-QRect foregroundWindowRect() {
-    HWND const hwnd = GetForegroundWindow();
+QRect foregroundWindowRect(HWND hwnd) {
     if (isDesktop(hwnd)) // Desktop is active, we return the geometry of the monitor containing the mouse cursor
     {
         QScreen const *const screen = screenContainingCursor();
@@ -107,15 +106,21 @@ QRect foregroundWindowRect() {
 //****************************************************************************************************************************************************
 void showComboPickerWindow() {
     static PickerWindow window;
-    QRect const rect = foregroundWindowRect();
+    if (!window.isVisible())
+        window.openForTarget(SubstitutionTarget::foreground());
+}
+
+void PickerWindow::openForTarget(SubstitutionTarget target) {
+    target_ = target;
+    QRect const rect = foregroundWindowRect(target.window);
     if (rect.isNull())
-        window.move(QCursor::pos());
+        move(QCursor::pos());
     else
-        window.move(QPoint(rect.left() + ((rect.width() - window.width()) / 2), rect.top() + ((rect.height() - window.height()) / 2)));
-    window.show();
-    SetForegroundWindow(reinterpret_cast<HWND>(window.winId()));  // NOLINT(performance-no-int-to-ptr)
-    qApp->setActiveWindow(&window);
-    window.raise();
+        move(QPoint(rect.left() + ((rect.width() - width()) / 2), rect.top() + ((rect.height() - height()) / 2)));
+    show();
+    SetForegroundWindow(reinterpret_cast<HWND>(winId()));  // NOLINT(performance-no-int-to-ptr)
+    qApp->setActiveWindow(this);
+    raise();
 }
 
 
@@ -291,15 +296,13 @@ void PickerWindow::triggerSelectedItem() {
     SpCombo const combo = (isCombo ? index.data(constants::PointerRole).value<SpCombo>() : nullptr);
     SpEmoji const emoji = (isCombo ? nullptr : index.data(constants::PointerRole).value<SpEmoji>());
     std::chrono::milliseconds constexpr delay(200);
+    SubstitutionTarget const target = target_;
     if (combo)
-        QTimer::singleShot(delay, [combo]() { combo->performSubstitution(true); });
-    else
-        QTimer::singleShot(delay, [emoji]() {
-            if ((!isBeeftextTheForegroundApplication()) &&
-                !EmojiManager::instance().isExcludedApplication(getActiveExecutableFileName())) {
-                if (performTextSubstitution(0, emoji->value(), -1, ETriggerSource::ComboPicker))
-                    emoji->setlastUseDateTime(QDateTime::currentDateTime());
-            }
+        QTimer::singleShot(delay, [combo, target]() { combo->performSubstitution(true, target); });
+    else if (emoji)
+        QTimer::singleShot(delay, [emoji, target]() {
+            if (performTextSubstitution(0, emoji->value(), -1, ETriggerSource::ComboPicker, target))
+                emoji->setlastUseDateTime(QDateTime::currentDateTime());
         });
 }
 
@@ -324,6 +327,8 @@ QString PickerWindow::textForItemAtIndex(QModelIndex const &index) {
             globals::debugLog().addError("Quick Search could not retrieve the selected combo.");
             return QString();
         }
+        if (!combo->isUsable())
+            return QString();
         bool cancelled = false;
         QString const text = combo->evaluatedSnippet(cancelled);
         return cancelled ? QString() : text;

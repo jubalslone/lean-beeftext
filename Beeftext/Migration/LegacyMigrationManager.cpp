@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "LegacyMigrationManager.h"
 #include "LegacyMigrationCore.h"
+#include "LegacyMigrationDialogChoice.h"
 #include "BeeftextGlobals.h"
 #include "BeeftextUtils.h"
 #include "Combo/ComboList.h"
@@ -13,7 +14,6 @@
 #ifdef _WIN32
 #include <TlHelp32.h>
 #include <restartmanager.h>
-#include <shellapi.h>
 #include <shlobj.h>
 #include <shobjidl.h>
 #endif
@@ -31,6 +31,7 @@ struct LegacySource {
     migration::ESourceType type { migration::ESourceType::Portable };
     migration::EPortableProduct portableProduct { migration::EPortableProduct::UpstreamBeeftext };
     QString rootPath;
+    QByteArray portableDirectoryId;
     QString executablePath;
     QString comboFilePath;
     QString displayName;
@@ -433,28 +434,11 @@ bool requestGracefulClose(LegacySource const &source) {
 }
 
 
-bool recyclePaths(QStringList const &paths) {
-    if (paths.isEmpty())
-        return true;
-    std::wstring list;
-    for (QString const &path: paths) {
-        std::wstring const item = QDir::toNativeSeparators(path).toStdWString();
-        list.append(item);
-        list.push_back(L'\0');
-    }
-    list.push_back(L'\0');
-    SHFILEOPSTRUCTW operation = {};
-    operation.wFunc = FO_DELETE;
-    operation.pFrom = list.c_str();
-    operation.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT;
-    return SHFileOperationW(&operation) == 0 && !operation.fAnyOperationsAborted;
-}
-
-
 #endif // _WIN32
 
 
-QStringList protectedCleanupRoots();
+bool protectedCleanupPath(QString const &path);
+bool eligiblePortableRoot(QString const &rootPath);
 
 
 bool readSourceContentsMatchingDigest(LegacySource const &source, QByteArray &outContents, QString &outError) {
@@ -501,14 +485,14 @@ bool refreshSourceBeforeImport(LegacySource const &recorded, LegacySource &refre
 		migration::EPortableProduct product;
 		if (!migration::isStrongPortableCandidate(QFileInfo(recorded.executablePath).absolutePath(),
 			&comboPath, &rootPath, &product) || product != recorded.portableProduct ||
-			!samePath(rootPath, recorded.rootPath) || !samePath(comboPath, recorded.comboFilePath)) {
+			!samePath(rootPath, recorded.rootPath) || !samePath(comboPath, recorded.comboFilePath) ||
+			(!recorded.portableDirectoryId.isEmpty() && !migration::portableDirectoryMatches(rootPath, recorded.portableDirectoryId))) {
 			outError = QObject::tr("The selected portable Beeftext source could not be revalidated after it closed.");
 			return false;
 		}
 		refreshed.rootPath = rootPath;
 		refreshed.comboFilePath = comboPath;
-		refreshed.cleanupSafe = !migration::isBroadCleanupRoot(rootPath, protectedCleanupRoots()) &&
-			QFileInfo(rootPath).fileName().contains("beeftext", Qt::CaseInsensitive);
+		refreshed.cleanupSafe = recorded.cleanupSafe && eligiblePortableRoot(rootPath);
 	}
 
 	QFile file(refreshed.comboFilePath);
@@ -534,20 +518,32 @@ bool refreshSourceBeforeImport(LegacySource const &recorded, LegacySource &refre
 }
 
 
-QStringList protectedCleanupRoots() {
-    QStringList result = {
-        QDir::homePath(),
-        QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),
-        QStandardPaths::writableLocation(QStandardPaths::DownloadLocation),
-        QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
-        QCoreApplication::applicationDirPath(),
-        qEnvironmentVariable("ProgramFiles"),
-        qEnvironmentVariable("ProgramFiles(x86)"),
-        qEnvironmentVariable("WINDIR"),
-    };
-    for (QFileInfo const &drive: QDir::drives())
-        result.append(drive.absoluteFilePath());
-    return result;
+bool protectedCleanupPath(QString const &path) {
+	QStringList const sharedRoots = {
+		QDir::homePath(),
+		QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),
+		QStandardPaths::writableLocation(QStandardPaths::DownloadLocation),
+		QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
+	};
+	QStringList protectedTrees = {
+		QCoreApplication::applicationDirPath(), globals::appDataDir(),
+		globals::machineLocalDataDir(), globals::migrationBackupFolderPath(),
+	};
+	for (auto const variable: { "ProgramFiles", "ProgramFiles(x86)", "WINDIR" }) {
+		QString const folder = qEnvironmentVariable(variable);
+		if (!folder.isEmpty())
+			protectedTrees.append(folder);
+	}
+	for (QString const &library: { legacyDefaultComboFilePath(), legacyConfiguredComboFilePath() }) {
+		if (!library.isEmpty())
+			protectedTrees.append(QFileInfo(library).absolutePath());
+	}
+	return migration::isBroadCleanupRoot(path, sharedRoots, protectedTrees);
+}
+
+
+bool eligiblePortableRoot(QString const &rootPath) {
+	return QFileInfo(rootPath).fileName().contains("beeftext", Qt::CaseInsensitive) && !protectedCleanupPath(rootPath);
 }
 
 
@@ -575,8 +571,8 @@ void addPortableCandidate(QList<LegacySource> &sources, QString const &executabl
     source.shortcutPaths = shortcuts;
     source.comboDigest = fileDigest(comboPath);
     source.modified = QFileInfo(comboPath).lastModified();
-    source.cleanupSafe = !migration::isBroadCleanupRoot(rootPath, protectedCleanupRoots()) &&
-        QFileInfo(rootPath).fileName().contains("beeftext", Qt::CaseInsensitive);
+    source.portableDirectoryId = migration::portableDirectoryIdentity(rootPath);
+    source.cleanupSafe = !source.portableDirectoryId.isEmpty() && eligiblePortableRoot(rootPath);
     if (!source.comboDigest.isEmpty())
         sources.append(source);
 }
@@ -631,6 +627,8 @@ QJsonObject sourceToJson(LegacySource const &source) {
     object["type"] = source.type == migration::ESourceType::Installed ? "installed" : "portable";
     object["portableProduct"] = source.portableProduct == migration::EPortableProduct::LeanBeeftext ? "lean" : "upstream";
     object["rootPath"] = source.rootPath;
+    if (source.type == migration::ESourceType::Portable)
+        object["portableDirectoryId"] = QString::fromLatin1(source.portableDirectoryId);
     object["executablePath"] = source.executablePath;
     object["comboFilePath"] = source.comboFilePath;
     object["shortcutPaths"] = QJsonArray::fromStringList(source.shortcutPaths);
@@ -646,6 +644,7 @@ LegacySource sourceFromJson(QJsonObject const &object) {
     source.portableProduct = object["portableProduct"].toString() == "lean" ?
         migration::EPortableProduct::LeanBeeftext : migration::EPortableProduct::UpstreamBeeftext;
     source.rootPath = object["rootPath"].toString();
+    source.portableDirectoryId = object["portableDirectoryId"].toString().toLatin1();
     source.executablePath = object["executablePath"].toString();
     source.comboFilePath = object["comboFilePath"].toString();
     // Read-only compatibility for pending installed cleanup written by pre-release QA builds.
@@ -716,25 +715,39 @@ bool sourceIsRunning(LegacySource const &source) {
 bool cleanupSource(LegacySource const &source) {
 	if (source.type != migration::ESourceType::Portable || !source.cleanupSafe)
 		return false;
-	QByteArray const currentDigest = fileDigest(source.comboFilePath);
-	if (currentDigest != source.comboDigest)
-        return false;
 #ifdef _WIN32
     QString comboPath;
     QString rootPath;
     migration::EPortableProduct product;
     if (!migration::isStrongPortableCandidate(QFileInfo(source.executablePath).absolutePath(), &comboPath, &rootPath, &product) ||
         product != source.portableProduct || !samePath(rootPath, source.rootPath) ||
-        migration::isBroadCleanupRoot(rootPath, protectedCleanupRoots()) ||
-        !QFileInfo(rootPath).fileName().contains("beeftext", Qt::CaseInsensitive))
+        !samePath(comboPath, source.comboFilePath) || !eligiblePortableRoot(rootPath) ||
+        !migration::canRecyclePortableTree(rootPath))
         return false;
-    QStringList recycle = { rootPath };
+	QString const expectedExecutable = QFileInfo(source.executablePath).dir().absoluteFilePath(
+		product == migration::EPortableProduct::LeanBeeftext ? "LeanBeeftext.exe" : "Beeftext.exe");
+	if (!samePath(expectedExecutable, source.executablePath))
+		return false;
+    QStringList externalShortcuts;
     for (QString const &shortcut: source.shortcutPaths) {
-        if (QFileInfo(shortcut).isFile() && samePath(shortcutTarget(shortcut), source.executablePath) &&
+        if (QFileInfo(shortcut).isFile() && !protectedCleanupPath(shortcut) &&
+            samePath(shortcutTarget(shortcut), source.executablePath) &&
             !canonicalPath(shortcut).startsWith(canonicalPath(rootPath) + '/', Qt::CaseInsensitive))
-            recycle.append(shortcut);
+            externalShortcuts.append(shortcut);
     }
-    return recyclePaths(recycle);
+	QByteArray const currentDigest = fileDigest(comboPath);
+	if (source.comboDigest.isEmpty() || currentDigest != source.comboDigest ||
+		!migration::portableDirectoryMatches(rootPath, source.portableDirectoryId))
+		return false;
+	if (!QFile::moveToTrash(rootPath) || migration::portableDirectoryMatches(rootPath, source.portableDirectoryId))
+		return false;
+
+	// The selected root is gone. A leftover shortcut must never cause its old path to be queued for removal again.
+	for (QString const &shortcut: externalShortcuts) {
+		if (samePath(shortcutTarget(shortcut), source.executablePath) && !QFile::moveToTrash(shortcut))
+			logMigrationWarning("a shortcut to the recycled portable copy could not be moved to the Recycle Bin.");
+	}
+	return true;
 #else
     Q_UNUSED(source)
     return false;
@@ -780,17 +793,28 @@ bool finishPendingCleanup(QSettings &settings, bool askUser) {
         return false;
     QJsonArray portablePending;
     bool recommendManualInstalledRemoval = false;
+    bool skippedUnidentifiedPortable = false;
     for (QJsonValue const &value: document.array()) {
         LegacySource const source = sourceFromJson(value.toObject());
         if (source.type == migration::ESourceType::Installed) {
 			recommendManualInstalledRemoval |= installedSourceStillPresent(source);
 			logMigrationInfo("retired pre-release pending installed cleanup without invoking an upstream uninstaller.");
 		} else {
+			QByteArray const currentId = source.portableDirectoryId.isEmpty() ? QByteArray() :
+				migration::portableDirectoryIdentity(source.rootPath);
+			if (source.portableDirectoryId.isEmpty() || (!currentId.isEmpty() && currentId != source.portableDirectoryId)) {
+				// Old records and replacement folders have no matching consent. A temporarily unavailable copy can be retried.
+				skippedUnidentifiedPortable = true;
+				continue;
+			}
 			portablePending.append(value);
 		}
     }
     settings.setValue(kPendingCleanupKey, QJsonDocument(portablePending).toJson(QJsonDocument::Compact));
     settings.sync();
+	if (skippedUnidentifiedPortable)
+		QMessageBox::information(nullptr, QObject::tr("Portable cleanup skipped"),
+			QObject::tr("Your combos were imported. Lean Beeftext could not match a portable folder to the one selected for removal. It was left in place."));
 	if (portablePending.isEmpty()) {
 		settings.remove(kPendingCleanupKey);
 		settings.setValue(kMigrationStateKey, int(migration::EState::Complete));
@@ -834,15 +858,7 @@ bool finishPendingCleanup(QSettings &settings, bool askUser) {
 }
 
 
-struct MigrationChoice {
-    bool accepted { false };
-    bool importContent { true };
-    bool cleanupPortable { true };
-    qsizetype selectedGroup { 0 };
-};
-
-
-MigrationChoice showMigrationDialog(QList<LegacySource> const &sources, QList<QList<qsizetype>> const &contentGroups) {
+migration::MigrationChoice showMigrationDialog(QList<LegacySource> const &sources, QList<QList<qsizetype>> const &contentGroups) {
     QDialog dialog;
     dialog.setWindowTitle(QObject::tr("Import from Beeftext → Lean Beeftext"));
     dialog.setMinimumWidth(620);
@@ -914,12 +930,7 @@ MigrationChoice showMigrationDialog(QList<LegacySource> const &sources, QList<QL
     QObject::connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
     update();
 
-    MigrationChoice result;
-    result.accepted = dialog.exec() == QDialog::Accepted;
-    result.importContent = importCheck->isChecked();
-    result.cleanupPortable = portableCheck->isVisible() && portableCheck->isChecked();
-    result.selectedGroup = sourceChoice->currentData().toLongLong();
-    return result;
+	return migration::execMigrationDialog(dialog, *sourceChoice, *importCheck, *portableCheck);
 }
 
 
@@ -1022,7 +1033,7 @@ void LegacyMigrationManager::runIfNeeded() {
     for (LegacySource const &source: sources)
         digests.append(source.comboDigest);
     QList<QList<qsizetype>> const contentGroups = migration::groupSourcesByContent(digests);
-    MigrationChoice const choice = showMigrationDialog(sources, contentGroups);
+    migration::MigrationChoice const choice = showMigrationDialog(sources, contentGroups);
     if (!choice.accepted)
         return;
     if (!choice.importContent) {

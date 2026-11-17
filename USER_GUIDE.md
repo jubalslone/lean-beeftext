@@ -257,6 +257,10 @@ Lean Beeftext can also import legacy Beeftext JSON and CSV exports.
 
 ## 9. Quick troubleshooting
 
+### Lean says it cannot open the combo library
+
+Lean stops at startup if it cannot fully read your existing library. The original file stays in place. If the folder is on OneDrive or a removable drive, make sure it is available and restart Lean. If the file itself is damaged, keep a copy before restoring a known-good library.
+
 ### Nothing expands
 
 Make sure Lean Beeftext is running.

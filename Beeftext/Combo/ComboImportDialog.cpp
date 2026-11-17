@@ -12,8 +12,6 @@
 #include "ComboManager.h"
 #include "ComboPortability.h"
 #include "Preferences/PreferencesManager.h"
-#include "BeeftextGlobals.h"
-#include <XMiLib/Exception.h>
 #include <XMiLib/XMiLibConstants.h>
 
 
@@ -60,7 +58,6 @@ ComboImportDialog::ComboImportDialog(QString const &filePath, SpGroup const &gro
     connect(ui_.radioSkipConflicts, &QRadioButton::toggled, this, &ComboImportDialog::onConflictRadioToggled);
 
     GroupList &groupList = ComboManager::instance().groupListRef();
-    groupList.ensureNotEmpty();
     ui_.comboGroup->setContent(groupList);
     if (group)
         ui_.comboGroup->setCurrentGroup(group);
@@ -144,6 +141,7 @@ void ComboImportDialog::updateGui() const {
     }
 
     if (!currentError_.isEmpty()) {
+        ui_.buttonImport->setEnabled(false);
         ui_.labelImportCount->setText(currentError_);
         ui_.labelImportCount->setVisible(true);
         return;
@@ -171,104 +169,26 @@ qint32 ComboImportDialog::computeTotalImportCount() const {
 }
 
 
-//****************************************************************************************************************************************************
-/// \param[out] outFailureCount on exit, this variable contains the number of failed imports
-//****************************************************************************************************************************************************
-void ComboImportDialog::performFinalImport(qint32 &outFailureCount) {
-    outFailureCount = 0;
-    ComboList &comboList = ComboManager::instance().comboListRef();
-    qint32 failureCount = 0;
-	SpGroup const destinationGroup = ui_.comboGroup->currentGroup();
-	QHash<QUuid, SpGroup> importedGroupMap;
-	if (preserveImportedGroups_) {
-		GroupList &existingGroups = ComboManager::instance().groupListRef();
-		for (SpGroup const &importedGroup: importedGroups_) {
-			SpGroup resolvedGroup;
-			GroupList::iterator const uuidMatch = existingGroups.findByUuid(importedGroup->uuid());
-			if (uuidMatch != existingGroups.end())
-				resolvedGroup = *uuidMatch;
-			if (!resolvedGroup) {
-				GroupList::iterator const nameMatch = std::find_if(existingGroups.begin(), existingGroups.end(),
-					[&](SpGroup const &group) { return group && group->name() == importedGroup->name(); });
-				if (nameMatch != existingGroups.end())
-					resolvedGroup = *nameMatch;
-			}
-			if (!resolvedGroup) {
-				if (!existingGroups.append(importedGroup))
-					throw xmilib::Exception(tr("A group from the Lean combo file could not be imported."));
-				resolvedGroup = importedGroup;
-			}
-			importedGroupMap.insert(importedGroup->uuid(), resolvedGroup);
-		}
-	} else if (!destinationGroup) {
-		throw xmilib::Exception(tr("Please select a valid group."));
-	}
-
-	auto assignGroup = [&](SpCombo const &combo) {
-		if (!preserveImportedGroups_) {
-			combo->setGroup(destinationGroup);
-			return;
-		}
-		SpGroup const importedGroup = combo->group();
-		if (!importedGroup || !importedGroupMap.contains(importedGroup->uuid()))
-			throw xmilib::Exception(tr("A combo's group could not be restored from the Lean combo file."));
-		combo->setGroup(importedGroupMap.value(importedGroup->uuid()));
-	};
-    for (SpCombo const &combo: importableCombos_) {
-		assignGroup(combo);
-        if (!comboList.append(combo))
-            ++failureCount;
-    }
-    if (ui_.radioSkipConflicts->isChecked())
-        return;
-
-    if (ui_.radioOverwrite->isChecked() && conflictingOlderCombos_.size())
-        std::copy(conflictingOlderCombos_.begin(), conflictingOlderCombos_.end(), std::back_inserter(conflictingNewerCombos_));
-
-    for (SpCombo const &combo: conflictingNewerCombos_) {
-        ComboList::iterator const it = comboList.findByKeyword(combo->keyword());
-        if (it == comboList.end()) {
-            ++failureCount;
-            continue;
-        }
-		assignGroup(combo);
-        *it = combo;
-    }
-}
-
-
-//****************************************************************************************************************************************************
-//
-//****************************************************************************************************************************************************
 void ComboImportDialog::onImport() {
-    try {
-        if (!this->computeTotalImportCount())
-            return;
+	if (!currentError_.isEmpty() || !computeTotalImportCount())
+		return;
 
-        qint32 failureCount = 0;
-        this->performFinalImport(failureCount);
-
-        QString errorMsg;
-        if ((!ComboManager::instance().saveComboListToFile(&errorMsg)))
-            QMessageBox::critical(this, tr("Error"), errorMsg);
-
-        if (failureCount) {
-            globals::debugLog().addError(QString("%1 supposedly possible combo import failed").arg(failureCount));
-            QMessageBox::critical(this, tr("Error"), (failureCount > 1) ?
-                                                     tr("%1 combos could not be imported.").arg(failureCount) : tr("A combo could not be imported."));
-        }
-
-        this->accept();
-    }
-    catch (xmilib::Exception const &e) {
-        QMessageBox::critical(this, tr("&Error"), e.qwhat());
-    }
+	QList<SpCombo> replacements;
+	if (!ui_.radioSkipConflicts->isChecked()) {
+		replacements = conflictingNewerCombos_;
+		if (ui_.radioOverwrite->isChecked())
+			replacements.append(conflictingOlderCombos_);
+	}
+	QString error;
+	if (!ComboManager::instance().importCombos(importableCombos_, replacements,
+		preserveImportedGroups_ ? &importedGroups_ : nullptr, ui_.comboGroup->currentGroup(), &error)) {
+		QMessageBox::critical(this, tr("Import failed"), error);
+		return;
+	}
+	accept();
 }
 
 
-//****************************************************************************************************************************************************
-//
-//****************************************************************************************************************************************************
 void ComboImportDialog::onCancel() {
     this->reject();
 }

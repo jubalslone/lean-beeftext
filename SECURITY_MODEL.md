@@ -20,6 +20,8 @@ Everything else—including PowerShell, environment-variable, clipboard, Discord
 
 Substitution does not use the clipboard or a synthetic paste shortcut. Deletion, UTF-16 Unicode insertion, permitted text line breaks, and bounded cursor-left movement are submitted as one serial Windows input transaction while Lean Beeftext's keyboard hook is disabled.
 
+Typed and manual triggers and Quick Search remember the original foreground window, focused Windows control, and their owning processes. Lean checks the application exclusions and verifies that the same control has focus immediately before submitting the input batch. If focus has moved or the destination cannot be identified, Lean drops the substitution, including keyword deletion. Some applications host multiple logical fields in one native control. Windows can also change focus between the final check and delivery.
+
 Tabs become visible `\t` text. Other control characters become visible `\uXXXX` text. Valid UTF-16 surrogate pairs, including emoji, are preserved; unpaired surrogates become visible code-unit text.
 
 ### Multiline behavior

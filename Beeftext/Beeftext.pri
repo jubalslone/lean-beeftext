@@ -1,6 +1,7 @@
 HEADERS += ./BeeftextConstants.h \
     ./BeeftextGlobals.h \
     ./BeeftextUtils.h \
+    ./SubstitutionTarget.h \
     ./ClipboardManager.h \
     ./I18nManager.h \
     ./MimeDataUtils.h \
@@ -22,10 +23,12 @@ HEADERS += ./BeeftextConstants.h \
     ./Combo/ComboSortFilterProxyModel.h \
     ./Combo/ComboImportDialog.h \
     ./Combo/ComboExportDialog.h \
+    ./Combo/ComboLibraryFile.h \
     ./Combo/ComboPortability.h \
     ./Combo/ComboFrame.h \
     ./Combo/ComboTableWidget.h \
     ./Migration/LegacyMigrationCore.h \
+    ./Migration/LegacyMigrationDialogChoice.h \
     ./Migration/LegacyMigrationManager.h \
     ./Update/UpdateCheckWorker.h \
     ./Update/UpdateManager.h \
@@ -57,6 +60,7 @@ SOURCES += ./AboutDialog.cpp \
     ./Combo/ComboFrame.cpp \
     ./Combo/ComboImportDialog.cpp \
     ./Combo/ComboExportDialog.cpp \
+    ./Combo/ComboLibraryFile.cpp \
     ./Combo/ComboPortability.cpp \
     ./Combo/ComboList.cpp \
     ./Combo/ComboManager.cpp \

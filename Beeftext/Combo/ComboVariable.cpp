@@ -128,8 +128,7 @@ bool checkedScale(qint64 value, qint64 factor, qint64 &result) {
 /// \param[in] shiftStr The string describing the timeshift (as defined in the dateTime: variable documentation.
 /// \return The current date shifted according to the instructions in the shift string.
 //****************************************************************************************************************************************************
-QDateTime shiftedDateTime(QString const &shiftStr) {
-    QDateTime result = QDateTime::currentDateTime();
+QDateTime shiftedDateTime(QDateTime result, QString const &shiftStr) {
 
     QStringList const shifts = splitTimeShiftString(shiftStr);
     for (QString const &shift: shifts) {
@@ -185,30 +184,6 @@ QDateTime shiftedDateTime(QString const &shiftStr) {
             return QDateTime();
     }
     return result;
-}
-
-
-//****************************************************************************************************************************************************
-/// \brief Evaluate a #[dateTime:} variable
-/// \param[in] variable The variable.
-/// \return the result of the evaluation.
-//****************************************************************************************************************************************************
-QString evaluateDateTimeVariable(QString const &variable) {
-    QRegularExpression const regExp(R"(^dateTime(:(([+-]\d+[yMwdhmsz])+))?:(.*)$)");
-    QRegularExpressionMatch const match = regExp.match(variable);
-    if (!match.hasMatch())
-        return QString();
-    QDateTime const dateTime = match.captured(1).isEmpty() ? QDateTime::currentDateTime() :
-                               shiftedDateTime(match.captured(2));
-    QString formatStr = resolveEscapingInVariableParameter(match.captured(4));
-    if (formatStr.isEmpty())
-        return QLocale::system().toString(dateTime);
-
-    qint32 const weekNumber = dateTime.date().weekNumber(); // we add support of ww and w for week number in format string.
-    formatStr = formatStr.replace("ww", QString("%1").arg(weekNumber, 2, 10, QChar('0')));
-    formatStr = formatStr.replace("w", QString::number(weekNumber));
-
-    return QLocale::system().toString(dateTime, formatStr);
 }
 
 
@@ -359,6 +334,29 @@ QString evaluatePowershellVariable(QString const &variable) {
 
 
 //****************************************************************************************************************************************************
+/// \brief Evaluate a #{dateTime:...} variable
+/// \param[in] variable The variable.
+/// \return the result of the evaluation.
+//****************************************************************************************************************************************************
+QString evaluateDateTimeVariable(QString const &variable, QDateTime const &now, QLocale const &locale) {
+    QRegularExpression const regExp(R"(^dateTime(:(([+-]\d+[yMwdhmsz])+))?:(.*)$)");
+    QRegularExpressionMatch const match = regExp.match(variable);
+    if (!match.hasMatch())
+        return QString();
+    QDateTime const dateTime = match.captured(1).isEmpty() ? now : shiftedDateTime(now, match.captured(2));
+    QString formatStr = resolveEscapingInVariableParameter(match.captured(4));
+    if (formatStr.isEmpty())
+        return locale.toString(dateTime);
+
+    qint32 const weekNumber = dateTime.date().weekNumber(); // we add support of ww and w for week number in format string.
+    formatStr = formatStr.replace("ww", QString("%1").arg(weekNumber, 2, 10, QChar('0')));
+    formatStr = formatStr.replace("w", QString::number(weekNumber));
+
+    return locale.toString(dateTime, formatStr);
+}
+
+
+//****************************************************************************************************************************************************
 /// \param[in] variable The variable, without the enclosing #{}.
 /// \param[in] forbiddenSubCombos The text of the combos that are not allowed to be substituted using #{combo:}, to 
 /// avoid endless recursion.
@@ -384,7 +382,7 @@ QString evaluateVariable(QString const &variable, QSet<QString> const &forbidden
             return systemLocale.toString(QDateTime::currentDateTime());
         case tlf::ERestrictedVariable::CustomDateTime:
         {
-            QString const value = evaluateDateTimeVariable(variable);
+            QString const value = evaluateDateTimeVariable(variable, QDateTime::currentDateTime(), systemLocale);
             return value.isEmpty() ? literal : value;
         }
         case tlf::ERestrictedVariable::Combo:
@@ -424,7 +422,7 @@ QString evaluateVariable(QString const &variable, QSet<QString> const &forbidden
         return systemLocale.toString(QDateTime::currentDateTime());
 
     if (variable.startsWith(kCustomDateTimeVariable))
-        return evaluateDateTimeVariable(variable);
+        return evaluateDateTimeVariable(variable, QDateTime::currentDateTime(), systemLocale);
 
     if (variable.startsWith("combo:"))
         return evaluateComboVariable(variable, ECaseChange::NoChange, forbiddenSubCombos, knownInputVariables, outCancelled);

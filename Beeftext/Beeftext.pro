@@ -5,7 +5,7 @@
 TEMPLATE = app
 TARGET = Beeftext
 QT += core network gui multimedia widgets
-CONFIG += c++14 precompile_header
+CONFIG += c++17 precompile_header
 PRECOMPILED_HEADER = stdafx.h
 include(Beeftext.pri)
 TRANSLATIONS += Translations/beeftext_fr.ts

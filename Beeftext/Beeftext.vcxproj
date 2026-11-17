@@ -286,6 +286,7 @@
     <ClCompile Include="Combo\ComboImportDialog.cpp" />
     <ClCompile Include="Combo\ComboList.cpp" />
     <ClCompile Include="Combo\ComboManager.cpp" />
+    <ClCompile Include="Combo\ComboLibraryFile.cpp" />
     <ClCompile Include="Combo\ComboPortability.cpp" />
     <ClCompile Include="Combo\ComboSortFilterProxyModel.cpp" />
     <ClCompile Include="Combo\ComboKeywordValidator.cpp" />
@@ -360,6 +361,7 @@
     <ClInclude Include="LastUse\ComboLastUseFile.h" />
     <ClInclude Include="LastUse\EmojiLastUseFile.h" />
     <ClInclude Include="Migration\LegacyMigrationCore.h" />
+    <ClInclude Include="Migration\LegacyMigrationDialogChoice.h" />
     <ClInclude Include="Migration\LegacyMigrationManager.h" />
     <ClInclude Include="Picker\PickerSortFilterProxyModel.h" />
     <QtMoc Include="Picker\PickerWindow.h" />
@@ -404,6 +406,7 @@
     <ClInclude Include="BeeftextConstants.h" />
     <ClInclude Include="BeeftextGlobals.h" />
     <ClInclude Include="BeeftextUtils.h" />
+    <ClInclude Include="SubstitutionTarget.h" />
     <ClInclude Include="Combo\Combo.h" />
     <QtMoc Include="Combo\ComboList.h">
       <ForceInclude Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h;../../Combo/%(Filename)%(Extension)</ForceInclude>
@@ -446,6 +449,7 @@
       <ForceInclude Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h;../../Combo/%(Filename)%(Extension)</ForceInclude>
     </QtMoc>
     <ClInclude Include="Combo\ComboKeywordValidator.h" />
+    <ClInclude Include="Combo\ComboLibraryFile.h" />
     <ClInclude Include="Combo\ComboPortability.h" />
     <ClInclude Include="Combo\ComboVariable.h" />
     <QtMoc Include="MainWindow.h">

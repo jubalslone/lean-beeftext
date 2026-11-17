@@ -11,11 +11,25 @@
 #define BEEFTEXT_COMBO_MANAGER_H
 
 
-#include "ComboList.h"
+#include "ComboLibraryFile.h"
 #include "Group/GroupList.h"
+#include "SubstitutionTarget.h"
 #include "WaveSound.h"
 #include <XMiLib/RandomNumberGenerator.h>
 #include <memory>
+
+
+// Return whether to clear the typed buffer. Both matchers see the same text,
+// even when the first matcher opens a dialog and processes queued input.
+template<class TryCombo, class TryEmoji>
+bool consumeTypedTrigger(QString text, bool triggersOnSpace, TryCombo tryCombo, TryEmoji tryEmoji) {
+	if (triggersOnSpace) {
+		if (text.isEmpty() || !text.back().isSpace())
+			return false;
+		text.chop(1);
+	}
+	return tryCombo(text) || tryEmoji(text) || triggersOnSpace;
+}
 
 
 //****************************************************************************************************************************************************
@@ -37,7 +51,9 @@ public: // member functions
     GroupList &groupListRef(); ///< Return a mutable reference to the group list
     GroupList const &groupListRef() const; ///< Return a constant reference to the group list
     bool loadComboListFromFile(QString *outErrorMsg = nullptr); ///< Load the combo list from the default file
-    bool saveComboListToFile(QString *outErrorMsg = nullptr) const; /// Save the combo list to the default location
+    bool saveComboListToFile(QString *outErrorMsg = nullptr); /// Save the combo list to the default location
+    bool importCombos(QList<SpCombo> const &additions, QList<SpCombo> const &replacements,
+        GroupList const *importedGroups, SpGroup const &destinationGroup, QString *error);
     bool restoreBackup(QString const &backupFilePath); /// Restore the combo list from a backup file
     void loadSoundFromPreferences(); ///< Load the combo sound to be played from the preferences
     void playSound() const; ///< Play the combo substitution sound.
@@ -49,17 +65,19 @@ signals:
 private: // member functions
     ComboManager(); ///< Default constructor
     void checkAndPerformSubstitution(); ///< Check if a combo or emoji substitution is possible and if so performs it
-    bool checkAndPerformComboSubstitution(); ///< check if a combo substitution is possible and if so performs it
-    bool checkAndPerformEmojiSubstitution(); ///< check if an emoji substitution is possible and if so performs it
+    bool checkAndPerformComboSubstitution(QString const &text, SubstitutionTarget target); ///< check if a combo substitution is possible and if so performs it
+    bool checkAndPerformEmojiSubstitution(QString const &text, SubstitutionTarget target); ///< check if an emoji substitution is possible and if so performs it
 
 private slots:
     void onComboBreakerTyped(); ///< Slot for the "Combo Breaker Typed" signal
-    void onCharacterTyped(QChar c); ///< Slot for the "Character Typed" signal
-    void onBackspaceTyped(); ///< Slot for the 'Backspace typed" signal
-    void onSubstitutionTriggerShortcut(); ///< Slot for the triggering of the substitution shortcut
+    void onCharacterTyped(QChar c, SubstitutionTarget target); ///< Slot for the "Character Typed" signal
+    void onBackspaceTyped(SubstitutionTarget target); ///< Slot for the 'Backspace typed" signal
+    void onSubstitutionTriggerShortcut(SubstitutionTarget target); ///< Slot for the triggering of the substitution shortcut
 
 private: // data member
+    SubstitutionTarget typingTarget_; ///< The native control that received the buffered text.
     QString currentText_; ///< The current string
+    ComboLibraryFile libraryFile_;
     ComboList comboList_; ///< The list of combos
     std::unique_ptr<WaveSound> sound_; ///< The sound to play when a combo is executed
     xmilib::RandomNumberGenerator rng_; ///< The RNG used to pick combos when multiple occurences are found

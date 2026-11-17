@@ -90,6 +90,9 @@
     <ClCompile Include="Combo\ComboExportDialog.cpp">
       <Filter>Combo</Filter>
     </ClCompile>
+    <ClCompile Include="Combo\ComboLibraryFile.cpp">
+      <Filter>Combo</Filter>
+    </ClCompile>
     <ClCompile Include="Combo\ComboPortability.cpp">
       <Filter>Combo</Filter>
     </ClCompile>
@@ -234,6 +237,7 @@
     <ClInclude Include="BeeftextConstants.h" />
     <ClInclude Include="BeeftextGlobals.h" />
     <ClInclude Include="BeeftextUtils.h" />
+    <ClInclude Include="SubstitutionTarget.h" />
     <ClInclude Include="I18nManager.h" />
     <ClInclude Include="Shortcut.h" />
     <ClInclude Include="Combo\ComboVariable.h">
@@ -257,6 +261,7 @@
     </ClInclude>
     <ClInclude Include="WaveSound.h" />
     <ClInclude Include="Migration\LegacyMigrationCore.h" />
+    <ClInclude Include="Migration\LegacyMigrationDialogChoice.h" />
     <ClInclude Include="Migration\LegacyMigrationManager.h" />
     <ClInclude Include="Combo\CaseSensitivity.h">
       <Filter>Combo</Filter>
@@ -337,6 +342,9 @@
     <QtMoc Include="Combo\ComboExportDialog.h">
       <Filter>Combo</Filter>
     </QtMoc>
+    <ClInclude Include="Combo\ComboLibraryFile.h">
+      <Filter>Combo</Filter>
+    </ClInclude>
     <ClInclude Include="Combo\ComboPortability.h">
       <Filter>Combo</Filter>
     </ClInclude>
