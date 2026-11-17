@@ -192,8 +192,13 @@ void ComboManager::playSound() const {
 //
 //****************************************************************************************************************************************************
 void ComboManager::checkAndPerformSubstitution() {
-    if (!this->checkAndPerformComboSubstitution())
-        this->checkAndPerformEmojiSubstitution();
+    PreferencesManager const &prefs = PreferencesManager::instance();
+    bool const triggersOnSpace = prefs.useAutomaticSubstitution() && prefs.comboTriggersOnSpace();
+    SubstitutionTarget const target = typingTarget_;
+    if (consumeTypedTrigger(currentText_, triggersOnSpace,
+            [this, target](QString const &text) { return checkAndPerformComboSubstitution(text, target); },
+            [this, target](QString const &text) { return checkAndPerformEmojiSubstitution(text, target); }))
+        this->onComboBreakerTyped();
 }
 
 
@@ -201,34 +206,18 @@ void ComboManager::checkAndPerformSubstitution() {
 /// \return true if a substitution was available and it was performed or cancelled because Beeftext is the active 
 /// application.
 //****************************************************************************************************************************************************
-bool ComboManager::checkAndPerformComboSubstitution() {
-    PreferencesManager const &prefs = PreferencesManager::instance();
-    bool const triggersOnSpace = (prefs.useAutomaticSubstitution() && prefs.comboTriggersOnSpace());
-
-    if (triggersOnSpace) {
-        bool const cond = (!currentText_.isEmpty()) && currentText_.back().isSpace();
-        Q_ASSERT(cond);
-        if (!cond)
-            return false;
-        currentText_.chop(1); // the last character is a space, and we want to remove it before matching keywords
-    }
-
+bool ComboManager::checkAndPerformComboSubstitution(QString const &text, SubstitutionTarget target) {
     VecSpCombo result;
     for (SpCombo const &combo: comboList_)
-        if (combo && combo->isUsable() && combo->matchesForInput(currentText_))
+        if (combo && combo->isUsable() && combo->matchesForInput(text))
             result.push_back(combo);
 
-    if (result.empty()) {
-        if (triggersOnSpace)
-            this->onComboBreakerTyped();
+    if (result.empty())
         return false;
-    }
 
     SpCombo const combo = result[result.size() > 1 ? static_cast<quint32>(rng_.get()) % result.size() : 0];
-    if ((!isBeeftextTheForegroundApplication()) &&
-        (combo->performSubstitution(false) && PreferencesManager::instance().playSoundOnCombo()) && sound_)
-        sound_->play(); // in Beeftext windows, substitution is disabled
-    this->onComboBreakerTyped();
+    if (combo->performSubstitution(false, target) && PreferencesManager::instance().playSoundOnCombo() && sound_)
+        sound_->play();
     return true;
 }
 
@@ -237,8 +226,8 @@ bool ComboManager::checkAndPerformComboSubstitution() {
 /// \return true if a substitution was available and it was performed or cancelled because Beeftext is the active 
 /// application.
 //****************************************************************************************************************************************************
-bool ComboManager::checkAndPerformEmojiSubstitution() {
-    QString currentText = currentText_;
+bool ComboManager::checkAndPerformEmojiSubstitution(QString const &text, SubstitutionTarget target) {
+    QString currentText = text;
     PreferencesManager const &prefs = PreferencesManager::instance();
     if (!prefs.emojiShortcodesEnabled())
         return false;
@@ -261,21 +250,13 @@ bool ComboManager::checkAndPerformEmojiSubstitution() {
     SpEmoji const emoji = emojisManager.find(keyword);
     if (!emoji)
         return false;
-    bool result = false;
-    if ((!isBeeftextTheForegroundApplication()) &&
-        !EmojiManager::instance().isExcludedApplication(getActiveExecutableFileName())) {
-        if (!performTextSubstitution(qint32(keyword.size() + rightDelimiter.size() + leftDelimiter.size()),
-                                     emoji->value(), -1, ETriggerSource::Keyword)) {
-            this->onComboBreakerTyped();
-            return true;
-        }
+    if (performTextSubstitution(qint32(keyword.size() + rightDelimiter.size() + leftDelimiter.size()),
+                                emoji->value(), -1, ETriggerSource::Keyword, target)) {
         emoji->setlastUseDateTime(QDateTime::currentDateTime());
         if (PreferencesManager::instance().playSoundOnCombo() && sound_)
             sound_->play();
-        result = true;
     }
-    this->onComboBreakerTyped();
-    return result;
+    return true;
 }
 
 
@@ -283,14 +264,19 @@ bool ComboManager::checkAndPerformEmojiSubstitution() {
 // 
 //****************************************************************************************************************************************************
 void ComboManager::onComboBreakerTyped() {
-    currentText_ = QString();
+    currentText_.clear();
+    typingTarget_ = {};
 }
 
 
 //****************************************************************************************************************************************************
 /// \param[in] c The character that was typed
 //****************************************************************************************************************************************************
-void ComboManager::onCharacterTyped(QChar c) {
+void ComboManager::onCharacterTyped(QChar c, SubstitutionTarget target) {
+    if (!typingTarget_.sameRecipient(target)) {
+        currentText_.clear();
+        typingTarget_ = target;
+    }
     PreferencesManager const &prefs = PreferencesManager::instance();
     currentText_.append(c);
     if ((!prefs.useAutomaticSubstitution()) || (prefs.comboTriggersOnSpace() && (!c.isSpace())))
@@ -302,15 +288,22 @@ void ComboManager::onCharacterTyped(QChar c) {
 //****************************************************************************************************************************************************
 // 
 //****************************************************************************************************************************************************
-void ComboManager::onBackspaceTyped() {
-    currentText_.chop(1);
+void ComboManager::onBackspaceTyped(SubstitutionTarget target) {
+    if (typingTarget_.sameRecipient(target))
+        currentText_.chop(1);
+    else
+        this->onComboBreakerTyped();
 }
 
 
 //****************************************************************************************************************************************************
 // 
 //****************************************************************************************************************************************************
-void ComboManager::onSubstitutionTriggerShortcut() {
+void ComboManager::onSubstitutionTriggerShortcut(SubstitutionTarget target) {
+    if (!typingTarget_.sameRecipient(target)) {
+        this->onComboBreakerTyped();
+        return;
+    }
     if (!PreferencesManager::instance().useAutomaticSubstitution())
         this->checkAndPerformSubstitution();
 }

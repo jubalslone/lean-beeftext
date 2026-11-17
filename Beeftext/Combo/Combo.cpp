@@ -403,7 +403,10 @@ qint32 computeCursorLeftShift(QString const &str) {
 /// \return true if the substitution was actually performed (it could a been cancelled, for instance by the user
 /// dismissing a variable input dialog.
 //****************************************************************************************************************************************************
-bool Combo::performSubstitution(bool triggeredByPicker) {
+bool Combo::performSubstitution(bool triggeredByPicker, SubstitutionTarget target) {
+	if (!isUsable() || !target.canReceiveInputNow())
+		return false; // Includes a stale Quick Search selection; do not even open an input prompt.
+	bool inserted = true;
     bool cancelled = false;
     QMap<QString, QString> knownInputVariables;
     QSet<QString> const forbiddenSubcombos;
@@ -415,6 +418,9 @@ bool Combo::performSubstitution(bool triggeredByPicker) {
         // Slack & al. for instance) will need some time to properly regain focus.
         qApp->thread()->msleep(300);
     }
+
+    if (!isUsable()) // A modal prompt may have processed changes to the combo or its group.
+        return false;
 
     InputManager &inputManager = InputManager::instance();
     PreferencesManager const &prefs = PreferencesManager::instance();
@@ -435,8 +441,8 @@ bool Combo::performSubstitution(bool triggeredByPicker) {
 
             qint32 const eraseCount = triggeredByPicker ? 0
                 : qMax<qint32>(qint32(keyword_.size()) + (triggersOnSpace ? 1 : 0), 0);
-            performRestrictedTextInput(eraseCount, snippet.text, qMax<qint32>(snippet.cursorLeftCount, 0),
-                                       allowRealLineBreaks);
+            inserted = performRestrictedTextInput(eraseCount, snippet.text, qMax<qint32>(snippet.cursorLeftCount, 0),
+                                       allowRealLineBreaks, target);
         } else {
             qint32 const cursorLShift = computeCursorLeftShift(newText);
             if (cursorLShift >= 0)
@@ -466,6 +472,8 @@ bool Combo::performSubstitution(bool triggeredByPicker) {
     }
     inputManager.setKeyboardHookEnabled(wasKeyboardHookEnabled);
 
+    if (!inserted)
+        return false;
     lastUseDateTime_ = QDateTime::currentDateTime();
     return true;
 }

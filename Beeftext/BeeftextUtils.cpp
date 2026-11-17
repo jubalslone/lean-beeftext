@@ -17,7 +17,8 @@
 #include "Preferences/PreferencesManager.h"
 #include "BeeftextGlobals.h"
 #include "Clipboard/ClipboardManagerDefault.h"
-#include <Psapi.h>
+#include "Emoji/EmojiManager.h"
+#include <QScopeGuard>
 #include <XMiLib/SystemUtils.h>
 #include <XMiLib/Exception.h>
 #include <vector>
@@ -205,30 +206,63 @@ bool usePortableAppsFolderLayout() {
 
 
 //****************************************************************************************************************************************************
-/// \return The name of the currently active application, including its extension (e.g. "explorer.exe")
-/// \return A null string in case of failure
+/// Return a process basename using only query access. An unknown name fails the exclusion check.
 //****************************************************************************************************************************************************
-QString getActiveExecutableFileName() {
-    WCHAR buffer[MAX_PATH + 1] = { 0 };
-    DWORD processId = 0;
-    GetWindowThreadProcessId(GetForegroundWindow(), &processId);
-    // ReSharper disable once CppLocalVariableMayBeConst
-    HANDLE processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
-    if (!processHandle)
-        return QString();
-    bool const ok = GetModuleFileNameEx(processHandle, nullptr, buffer, MAX_PATH);
-    CloseHandle(processHandle);
-    return ok ? QFileInfo(QDir::fromNativeSeparators(QString::fromWCharArray(buffer))).fileName() : QString();
+static QString executableFileName(DWORD processId) {
+	HANDLE const process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId);
+	if (!process)
+		return {};
+	auto const closeProcess = qScopeGuard([process] { CloseHandle(process); });
+	QVarLengthArray<wchar_t, MAX_PATH> path(MAX_PATH);
+	for (;;) {
+		DWORD length = static_cast<DWORD>(path.size());
+		if (QueryFullProcessImageNameW(process, 0, path.data(), &length))
+			return QFileInfo(QDir::fromNativeSeparators(QString::fromWCharArray(path.constData(), length))).fileName();
+		if (GetLastError() != ERROR_INSUFFICIENT_BUFFER || path.size() >= 32768)
+			return {};
+		path.resize(32768); // Maximum extended-length Windows path in UTF-16 units.
+	}
 }
 
+QString getActiveExecutableFileName() {
+	DWORD processId = 0;
+	GetWindowThreadProcessId(GetForegroundWindow(), &processId);
+	return executableFileName(processId);
+}
 
-//****************************************************************************************************************************************************
-/// \return true if and only if Beeftext is the application currently in the foreground
-//****************************************************************************************************************************************************
-bool isBeeftextTheForegroundApplication() {
-    DWORD processId = 0;
-    GetWindowThreadProcessId(GetForegroundWindow(), &processId);
-    return QCoreApplication::applicationPid() == processId;
+SubstitutionTarget SubstitutionTarget::foreground() {
+	SubstitutionTarget target;
+	target.window = GetForegroundWindow();
+	DWORD const thread = GetWindowThreadProcessId(target.window, &target.processId);
+	GUITHREADINFO info{};
+	info.cbSize = sizeof(info);
+	if (!thread || !GetGUIThreadInfo(thread, &info) || info.hwndActive != target.window || !info.hwndFocus)
+		return {};
+	target.focus = info.hwndFocus;
+	if (!GetWindowThreadProcessId(target.focus, &target.focusProcessId))
+		return {};
+	return target;
+}
+
+bool SubstitutionTarget::sameRecipient(SubstitutionTarget const &other) const {
+	return window && focus && processId && focusProcessId && window == other.window && focus == other.focus
+		&& processId == other.processId && focusProcessId == other.focusProcessId;
+}
+
+bool SubstitutionTarget::allowsProcesses(ProcessListManager const &exclusions, bool checkEmojiExclusions) const {
+	auto allowed = [&](DWORD id) {
+		QString const name = executableFileName(id);
+		return !name.isEmpty() && !exclusions.filter(name)
+			&& (!checkEmojiExclusions || !EmojiManager::instance().isExcludedApplication(name));
+	};
+	return processId && focusProcessId && allowed(processId) && (processId == focusProcessId || allowed(focusProcessId));
+}
+
+bool SubstitutionTarget::canReceiveInputNow(bool checkEmojiExclusions) const {
+	DWORD const ownProcess = GetCurrentProcessId();
+	if (processId == ownProcess || focusProcessId == ownProcess || !sameRecipient(foreground()))
+		return false;
+	return allowsProcesses(globals::excludedApplications(), checkEmojiExclusions) && sameRecipient(foreground());
 }
 
 
@@ -350,7 +384,7 @@ QString ensureStringHasCRLFLineEndings(QString const &str) {
 void insertText(QString const &text) {
     if constexpr (constants::kRestrictedBuild) {
         performRestrictedTextInput(0, text, 0,
-            PreferencesManager::instance().allowRealLineBreaksInSnippets());
+            PreferencesManager::instance().allowRealLineBreaksInSnippets(), SubstitutionTarget::foreground());
         return;
     }
 
@@ -421,8 +455,8 @@ void moveCursorLeft(qint32 count) {
 /// non-text event accepted from content is an unmodified Return generated from a
 /// normalized line break when the dedicated preference permits it.
 //****************************************************************************************************************************************************
-void performRestrictedTextInput(qint32 eraseCount, QString const &text, qint32 cursorLeftCount,
-    bool allowRealLineBreaks) {
+bool performRestrictedTextInput(qint32 eraseCount, QString const &text, qint32 cursorLeftCount,
+    bool allowRealLineBreaks, SubstitutionTarget target, bool checkEmojiExclusions) {
     waitForModifierRelease();
 
     qint32 const safeEraseCount = qMax<qint32>(eraseCount, 0);
@@ -446,14 +480,18 @@ void performRestrictedTextInput(qint32 eraseCount, QString const &text, qint32 c
     for (qint32 index = 0; index < safeCursorLeftCount; ++index)
         appendVirtualKeyPress(events, VK_LEFT);
 
+	// SendInput targets the foreground queue. Check again after modifier waiting and
+	// event preparation, before issuing even the first Backspace.
+	if (!target.canReceiveInputNow(checkEmojiExclusions))
+		return false;
     if (events.empty())
-        return;
+        return true;
 
     UINT const eventCount = static_cast<UINT>(events.size());
     SetLastError(ERROR_SUCCESS);
     UINT const sent = SendInput(eventCount, events.data(), sizeof(INPUT));
     if (sent == eventCount)
-        return;
+        return true;
 
     DWORD const error = GetLastError();
     if ((sent > 0) && ((sent % 2) != 0)) {
@@ -475,7 +513,10 @@ void performRestrictedTextInput(qint32 eraseCount, QString const &text, qint32 c
 /// \param[in] source The source that triggered the combo
 /// repositionning.
 //****************************************************************************************************************************************************
-bool performTextSubstitution(qint32 charCount, QString const &newText, qint32 cursorPos, ETriggerSource source) {
+bool performTextSubstitution(qint32 charCount, QString const &newText, qint32 cursorPos, ETriggerSource source, SubstitutionTarget target) {
+	if (!target.canReceiveInputNow(true))
+		return false;
+	bool inserted = true;
     InputManager &inputManager = InputManager::instance();
     PreferencesManager const &prefs = PreferencesManager::instance();
     bool const wasKeyboardHookEnabled = inputManager.setKeyboardHookEnabled(false);
@@ -493,7 +534,7 @@ bool performTextSubstitution(qint32 charCount, QString const &newText, qint32 cu
                 : qMax<qint32>(charCount + (triggersOnSpace ? 1 : 0), 0);
             qint32 const cursorLeftCount = cursorPos < 0 ? 0
                 : qMax<qint32>(0, printableCharacterCount(tlf::sanitizeText(text, allowRealLineBreaks)) - cursorPos);
-            performRestrictedTextInput(eraseCount, text, cursorLeftCount, allowRealLineBreaks);
+            inserted = performRestrictedTextInput(eraseCount, text, cursorLeftCount, allowRealLineBreaks, target, true);
         } else {
             if (!triggeredByPicker)
                 eraseChars(qMax<qint32>(charCount + (triggersOnSpace ? 1 : 0), 0));
@@ -514,7 +555,7 @@ bool performTextSubstitution(qint32 charCount, QString const &newText, qint32 cu
         return false;
     }
     inputManager.setKeyboardHookEnabled(wasKeyboardHookEnabled);
-    return true;
+    return inserted;
 }
 
 

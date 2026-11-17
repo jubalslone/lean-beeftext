@@ -51,6 +51,7 @@ add_executable(Beeftext WIN32
    BeeftextGlobals.h
    BeeftextUtils.cpp
    BeeftextUtils.h
+   SubstitutionTarget.h
    I18nManager.cpp
    I18nManager.h
    InputManager.cpp
@@ -255,5 +256,6 @@ if(BUILD_TESTING)
       add_test(NAME ${name} COMMAND ${name})
    endfunction()
    add_lean_app_test(ComboLibraryTests)
+   add_lean_app_test(SubstitutionTargetTests)
    add_lean_app_test(DateTimeFormatTests)
 endif()

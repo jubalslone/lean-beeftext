@@ -405,6 +405,7 @@
     <ClInclude Include="BeeftextConstants.h" />
     <ClInclude Include="BeeftextGlobals.h" />
     <ClInclude Include="BeeftextUtils.h" />
+    <ClInclude Include="SubstitutionTarget.h" />
     <ClInclude Include="Combo\Combo.h" />
     <QtMoc Include="Combo\ComboList.h">
       <ForceInclude Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h;../../Combo/%(Filename)%(Extension)</ForceInclude>

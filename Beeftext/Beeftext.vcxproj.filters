@@ -237,6 +237,7 @@
     <ClInclude Include="BeeftextConstants.h" />
     <ClInclude Include="BeeftextGlobals.h" />
     <ClInclude Include="BeeftextUtils.h" />
+    <ClInclude Include="SubstitutionTarget.h" />
     <ClInclude Include="I18nManager.h" />
     <ClInclude Include="Shortcut.h" />
     <ClInclude Include="Combo\ComboVariable.h">

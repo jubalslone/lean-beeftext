@@ -1,6 +1,7 @@
 HEADERS += ./BeeftextConstants.h \
     ./BeeftextGlobals.h \
     ./BeeftextUtils.h \
+    ./SubstitutionTarget.h \
     ./ClipboardManager.h \
     ./I18nManager.h \
     ./MimeDataUtils.h \

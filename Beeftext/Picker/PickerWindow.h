@@ -13,6 +13,7 @@
 
 #include "ui_PickerWindow.h"
 #include "PickerModel.h"
+#include "SubstitutionTarget.h"
 #include "PickerWindowMoverResizer.h"
 #include "PickerSortFilterProxyModel.h"
 
@@ -27,6 +28,7 @@ bool applyComboPickerPreferences(); ///< Apply the combo picker preferences
 class PickerWindow : public QWidget {
 Q_OBJECT
 public: // member functions
+    void openForTarget(SubstitutionTarget target);
     PickerWindow(); ///< Default constructor
     PickerWindow(PickerWindow const &) = delete; ///< Disabled copy-constructor
     PickerWindow(PickerWindow &&) = delete; ///< Disabled assignment copy-constructor
@@ -59,6 +61,7 @@ private: // member functions
 
 private: // data member
     Ui::PickerWindow ui_ = {}; ///< The GUI for the window.
+    SubstitutionTarget target_; ///< Native input destination before the overlay took focus.
     PickerModel model_; ///< The model for the list view.
     PickerSortFilterProxyModel proxyModel_; ///< The proxy model for sorting/filtering the list view
     PickerWindowMoverResizer moverResizer_; ///< The mover/resizer for the window.

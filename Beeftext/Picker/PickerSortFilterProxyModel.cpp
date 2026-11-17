@@ -34,11 +34,8 @@ bool PickerSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelInd
         return false;
     QModelIndex const index = model->index(sourceRow, 0, QModelIndex());
     bool const isEmoji = (index.data(constants::TypeRole).value<constants::EITemType>() == constants::Emoji);
-    if (isEmoji) {
-        if (pattern.size() < 3)
-            return false;
-    } else if (pattern.isEmpty())
-        return true;
+    if (isEmoji && pattern.size() < 3)
+        return false;
 
     SpEmoji const emoji(isEmoji ? index.data(constants::PointerRole).value<SpEmoji>() : nullptr);
     SpCombo const combo(isEmoji ? nullptr : index.data(constants::PointerRole).value<SpCombo>());
@@ -46,6 +43,9 @@ bool PickerSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelInd
     Q_ASSERT(ok);
     if ((!ok) || ((!isEmoji) && (!combo->isUsable())))
         return false;
+
+    if (pattern.isEmpty())
+        return true;
 
     QString const comboName = model->data(index, Qt::DisplayRole).toString();
     QString const keyword = isEmoji ? emoji->shortcode() : combo->keyword();

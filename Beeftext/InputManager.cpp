@@ -117,19 +117,20 @@ SpShortcut shortcutFromWindowsKeyEvent(KBDLLHOOKSTRUCT const *keyEvent) {
 /// \param[in] lParam A pointer to a KBDLLHOOKSTRUCT structure.
 //****************************************************************************************************************************************************
 LRESULT CALLBACK InputManager::keyboardProcedure(int nCode, WPARAM wParam, LPARAM lParam) {
-    static ProcessListManager const &processListManager = globals::excludedApplications();
-    if (processListManager.filter(getActiveExecutableFileName()))
-        return CallNextHookEx(nullptr, nCode, wParam, lParam); // The active app is listed as excluded
-
-    if ((WM_KEYDOWN != wParam) && (WM_SYSKEYDOWN != wParam))
-        return CallNextHookEx(nullptr, nCode, wParam, lParam);
+	if (nCode < 0 || (WM_KEYDOWN != wParam && WM_SYSKEYDOWN != wParam))
+		return CallNextHookEx(nullptr, nCode, wParam, lParam);
+	SubstitutionTarget const target = SubstitutionTarget::foreground();
+	if (!target.allowsProcesses(globals::excludedApplications())) {
+		emit instance().comboBreakerTyped();
+		return CallNextHookEx(nullptr, nCode, wParam, lParam);
+	}
     KeyStroke keyStroke = { 0, 0, { 0 }};
     KBDLLHOOKSTRUCT const *keyEvent = reinterpret_cast<KBDLLHOOKSTRUCT *>(lParam); // NOLINT(performance-no-int-to-ptr)
     if (!keyEvent)
         return CallNextHookEx(nullptr, nCode, wParam, lParam);
     SpShortcut const shortcut = shortcutFromWindowsKeyEvent(keyEvent);
     if (shortcut && shortcut->isValid())
-        emit instance().shortcutPressed(shortcut); // note that we do not return here, as some combination (e.g. Ctrl+Alt+5 or AltGr+5) may actually lead to some text
+        emit instance().shortcutPressed(shortcut, target); // note that we do not return here, as some combination (e.g. Ctrl+Alt+5 or AltGr+5) may actually lead to some text
 
     if (!PreferencesManager::instance().beeftextEnabled())
         return CallNextHookEx(nullptr, nCode, wParam, lParam);
@@ -149,9 +150,8 @@ LRESULT CALLBACK InputManager::keyboardProcedure(int nCode, WPARAM wParam, LPARA
     for (quint32 const key: keyList)
         keyStroke.keyboardState[key] = static_cast<quint8>(GetKeyState(static_cast<quint16>(key)));
 
-    // our event handler will return false if we want to 'intercept' the keystroke and not pass it to the next hook,
-    // but the MSDN documentation says we MUST do it if nCode < 0
-    if ((!instance().onKeyboardEvent(keyStroke)) && (nCode >= 0))
+    // A false result consumes the keystroke.
+    if (!instance().onKeyboardEvent(keyStroke, target))
         return 0;
     return CallNextHookEx(nullptr, nCode, wParam, lParam);
 }
@@ -188,7 +188,7 @@ InputManager &InputManager::instance() {
 //****************************************************************************************************************************************************
 /// \
 //****************************************************************************************************************************************************
-void InputManager::onShortcut(SpShortcut const &shortcut) {
+void InputManager::onShortcut(SpShortcut const &shortcut, SubstitutionTarget target) {
     if ((!shortcut) || (!isShortcutProcessingEnabled_))
         return;
     PreferencesManager const &prefs = PreferencesManager::instance();
@@ -201,7 +201,7 @@ void InputManager::onShortcut(SpShortcut const &shortcut) {
         return;
 
     if ((!prefs.useAutomaticSubstitution()) && isComboTriggerShortcut(shortcut)) {
-        emit substitutionShortcutTriggered();
+        emit substitutionShortcutTriggered(target);
         return;
     }
 }
@@ -212,6 +212,7 @@ void InputManager::onShortcut(SpShortcut const &shortcut) {
 //****************************************************************************************************************************************************
 InputManager::InputManager()
     : QObject(nullptr), useLegacyKeyProcessing_(!isAppRunningOnWindows10OrHigher()) {
+    qRegisterMetaType<SubstitutionTarget>();
     this->enableKeyboardHook();
     connect(this, &InputManager::shortcutPressed, this, &InputManager::onShortcut);
 #ifdef NDEBUG
@@ -235,7 +236,7 @@ InputManager::~InputManager() {
 /// \param[in] keyStroke The key stroke
 /// \return true if the event can be passed down to the keyboard hooked chain, and false it it should be removed
 //****************************************************************************************************************************************************
-bool InputManager::onKeyboardEvent(KeyStroke const &keyStroke) {
+bool InputManager::onKeyboardEvent(KeyStroke const &keyStroke, SubstitutionTarget target) {
     // on some layout (e.g. US International, direction key + alt lead to garbage char if ToUnicode is pressed, so
     // we bypass normal processing for those keys(note this is different for the dead key issue described in
     // processKey().
@@ -256,7 +257,7 @@ bool InputManager::onKeyboardEvent(KeyStroke const &keyStroke) {
     PreferencesManager const &prefs = PreferencesManager::instance();
     for (QChar c: text) {
         if (QChar('\b') == c) {
-            emit backspaceTyped();
+            emit backspaceTyped(target);
             continue;
         }
         if (!c.isPrint()) {
@@ -265,12 +266,12 @@ bool InputManager::onKeyboardEvent(KeyStroke const &keyStroke) {
         }
         if (c.isSpace()) {
             if (prefs.comboTriggersOnSpace() && prefs.useAutomaticSubstitution())
-                emit characterTyped(c);
+                emit characterTyped(c, target);
             else
                 emit comboBreakerTyped();
             continue;
         }
-        emit characterTyped(c);
+        emit characterTyped(c, target);
     }
     return true;
 }
