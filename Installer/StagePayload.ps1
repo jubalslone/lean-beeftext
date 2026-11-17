@@ -84,6 +84,7 @@ foreach ($document in @(
 	'LICENSE.GPL-3.0.txt',
 	'LICENSE.Qt-LGPL-3.0.txt',
 	'README.md',
+	'USER_GUIDE.md',
 	'SECURITY_MODEL.md',
 	'THIRD_PARTY_NOTICES.md',
 	'ARTIFACT_SIGNING.md',

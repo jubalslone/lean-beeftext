@@ -257,6 +257,19 @@ jobs:
           }
           Invoke-Setup
           if (-not (Test-Path -LiteralPath (Join-Path $installDirectory 'LeanBeeftext.exe'))) { throw 'Installed executable is missing.' }
+          $portable = [IO.Compression.ZipFile]::OpenRead((Resolve-Path ./artifact/Lean-Beeftext-1.0.0-portable-windows-x64.zip).Path)
+          try {
+            foreach ($document in @('README.md', 'USER_GUIDE.md')) {
+              $expected = (Get-FileHash -LiteralPath $document -Algorithm SHA256).Hash
+              $installed = (Get-FileHash -LiteralPath (Join-Path $installDirectory $document) -Algorithm SHA256).Hash
+              $entry = $portable.GetEntry($document)
+              if ($null -eq $entry) { throw "Missing $document at the portable ZIP root." }
+              $stream = $entry.Open()
+              try { $packed = (Get-FileHash -InputStream $stream -Algorithm SHA256).Hash }
+              finally { $stream.Dispose() }
+              if ($installed -ne $expected -or $packed -ne $expected) { throw "Packaged $document differs from source." }
+            }
+          } finally { $portable.Dispose() }
           if (Test-Path -LiteralPath (Join-Path $installDirectory 'Portable.bin')) { throw 'Installed application became portable.' }
           if (Test-Path -LiteralPath (Join-Path $installDirectory 'PortableApps.bin')) { throw 'Installed application contains PortableApps.bin.' }
           $uninstallKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{499E5EE9-ECC6-455E-B78A-EDF581715A80}_is1'
